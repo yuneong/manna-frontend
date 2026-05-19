@@ -14,9 +14,15 @@
     "lint:eslint": "eslint . --fix --cache"
   },
   "dependencies": {
+    "@tanstack/vue-query": "^5.100.11",
+    "@vee-validate/zod": "^4.15.1",
+    "axios": "^1.16.1",
+    "dayjs": "^1.11.20",
     "pinia": "^3.0.4",
+    "vee-validate": "^4.15.1",
     "vue": "^3.5.32",
-    "vue-router": "^5.0.4"
+    "vue-router": "^5.0.4",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tsconfig/node24": "^24.0.4",
