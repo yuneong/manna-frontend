@@ -103,14 +103,28 @@ function toggleDate(d: Date) {
   selectedDates.value = next
 }
 function clearAll() { selectedDates.value = new Set() }
+
+const hasSavedResponse = ref(false)
+const justSaved = ref(false)
+
 function saveDates() {
-  setAvailability({ availableDates: [...selectedDates.value] })
+  setAvailability(
+    { availableDates: [...selectedDates.value] },
+    {
+      onSuccess: () => {
+        hasSavedResponse.value = true
+        justSaved.value = true
+        setTimeout(() => { justSaved.value = false }, 1600)
+      },
+    },
+  )
 }
 
 onMounted(async () => {
   try {
     const res = await meetingApi.getMyAvailability(meetingId)
     selectedDates.value = new Set(res.data.availableDates)
+    hasSavedResponse.value = true
   } catch {
     // 404(미참여) 등 에러 시 빈 상태 유지
   }
@@ -293,12 +307,30 @@ function copyLink() {
           <div class="save-bar">
             <button class="clear-btn" @click="clearAll">모두 해제</button>
             <button
-              :disabled="selectedDates.size === 0 || isSaving"
-              :class="['save-btn', (selectedDates.size === 0 || isSaving) && 'save-btn--disabled']"
+              :disabled="selectedDates.size === 0 || isSaving || justSaved"
+              :class="[
+                'save-btn',
+                justSaved && 'save-btn--saved',
+                (selectedDates.size === 0 || isSaving) && !justSaved && 'save-btn--disabled',
+              ]"
               @click="saveDates"
             >
-              <span v-if="isSaving" class="save-btn__spinner" />
-              내 응답 저장하기 ({{ selectedDates.size }}일)
+              <template v-if="isSaving">
+                <span class="save-btn__spinner" />
+                저장 중...
+              </template>
+              <template v-else-if="justSaved">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                  <path d="M3 7l3 3 5-6" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                저장되었습니다
+              </template>
+              <template v-else-if="hasSavedResponse">
+                응답 수정하기 ({{ selectedDates.size }}일)
+              </template>
+              <template v-else>
+                내 응답 저장하기 ({{ selectedDates.size }}일)
+              </template>
             </button>
           </div>
         </template>
@@ -778,7 +810,13 @@ function copyLink() {
   transition: background 0.12s;
 }
 .save-btn:hover:not(:disabled) { background: var(--color-primary-dark); }
-.save-btn--disabled, .save-btn:disabled {
+.save-btn--saved {
+  background: var(--color-success);
+  box-shadow: 0 2px 6px rgba(15, 110, 86, 0.25);
+  cursor: default;
+}
+.save-btn--saved:hover { background: var(--color-success); }
+.save-btn--disabled, .save-btn:disabled:not(.save-btn--saved) {
   background: #c9c6e4;
   cursor: not-allowed;
   box-shadow: none;
