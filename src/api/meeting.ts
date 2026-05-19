@@ -4,6 +4,7 @@ import type {
   CreateMeetingRequest,
   AvailabilityRequest,
   HeatmapResponse,
+  MyAvailabilityResponse,
   ConfirmDateRequest,
 } from '../types/meeting'
 
@@ -15,6 +16,8 @@ export const meetingApi = {
   setAvailability: (id: number, data: AvailabilityRequest) =>
     client.put(`/api/v1/meetings/${id}/availability`, data),
   getHeatmap: (id: number) => client.get<HeatmapResponse>(`/api/v1/meetings/${id}/heatmap`),
+  getMyAvailability: (id: number) =>
+    client.get<MyAvailabilityResponse>(`/api/v1/meetings/${id}/availability/me`),
   confirm: (id: number, data: ConfirmDateRequest) =>
     client.post<Meeting>(`/api/v1/meetings/${id}/confirm`, data),
 }

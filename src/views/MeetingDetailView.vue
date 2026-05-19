@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import dayjs from 'dayjs'
 import { useMeeting, useHeatmap, useSetAvailability, useJoinMeeting } from '../composables/useMeeting'
+import { meetingApi } from '../api/meeting'
 import { useAuthStore } from '../stores/auth'
 import AppBadge from '../components/common/AppBadge.vue'
 import AvatarStack from '../components/common/AvatarStack.vue'
@@ -44,7 +46,12 @@ function startOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate())
 }
 function ymd(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  return dayjs(d).format('YYYY-MM-DD')
+}
+// "YYYY-MM-DD" 문자열을 UTC가 아닌 로컬 날짜로 파싱
+function parseLocalDate(s: string): Date {
+  const [y, m, d] = s.split('-').map(Number)
+  return new Date(y, m - 1, d)
 }
 function fmtDate(d: Date): string {
   return `${d.getMonth()+1}월 ${d.getDate()}일 (${DAYS[d.getDay()]})`
@@ -59,8 +66,8 @@ function inRange(d: Date, s: Date, e: Date): boolean {
   return dd >= startOfDay(s) && dd <= startOfDay(e)
 }
 
-const startDate = computed(() => meeting.value ? new Date(meeting.value.dateRangeStart) : null)
-const endDate = computed(() => meeting.value ? new Date(meeting.value.dateRangeEnd) : null)
+const startDate = computed(() => meeting.value ? parseLocalDate(meeting.value.dateRangeStart) : null)
+const endDate = computed(() => meeting.value ? parseLocalDate(meeting.value.dateRangeEnd) : null)
 
 // Calendar navigation
 const calYear = ref(0)
@@ -100,14 +107,25 @@ function saveDates() {
   setAvailability({ availableDates: [...selectedDates.value] })
 }
 
+onMounted(async () => {
+  try {
+    const res = await meetingApi.getMyAvailability(meetingId)
+    selectedDates.value = new Set(res.data.availableDates)
+  } catch {
+    // 404(미참여) 등 에러 시 빈 상태 유지
+  }
+})
+
 // Heatmap
 function heatColor(count: number, total: number): string {
-  if (!count || !total) return 'transparent'
-  return `hsl(247, 50%, ${92 - (count / total) * 55}%)`
+  if (!count) return 'transparent'
+  const denom = total > 0 ? total : count
+  return `hsl(247, 50%, ${92 - (count / denom) * 55}%)`
 }
 function heatTextColor(count: number, total: number): string {
   if (!count) return 'var(--color-text-placeholder)'
-  return count / total > 0.55 ? '#fff' : 'var(--color-primary)'
+  const denom = total > 0 ? total : count
+  return count / denom > 0.55 ? '#fff' : 'var(--color-primary)'
 }
 const maxHeatCount = computed(() => {
   const vals = Object.values(heatmap.value)
@@ -344,7 +362,7 @@ function copyLink() {
                       </span>
                     </div>
                     <div class="heat-cell__count" :style="{ color: heatTextColor(heatmap[ymd(d)] || 0, totalParticipants) }">
-                      {{ heatmap[ymd(d)] || 0 }}/{{ totalParticipants }}
+                      {{ heatmap[ymd(d)] || 0 }}/{{ totalParticipants || '?' }}
                     </div>
                     <div v-if="heatmap[ymd(d)] === maxHeatCount && maxHeatCount > 0" class="heat-cell__star">
                       <svg width="9" height="9" viewBox="0 0 10 10" fill="none" aria-hidden="true">

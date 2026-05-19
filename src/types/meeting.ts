@@ -35,6 +35,11 @@ export interface HeatmapResponse {
   heatmap: Record<string, number>
 }
 
+export interface MyAvailabilityResponse {
+  meetingId: number
+  availableDates: string[]
+}
+
 export interface ConfirmDateRequest {
   confirmedDate: string
 }
