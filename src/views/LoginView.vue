@@ -41,7 +41,7 @@ async function onSubmit() {
   try {
     await login(form.email, form.password)
     const redirect = route.query.redirect as string | undefined
-    await router.push(redirect || '/home')
+    await router.push(redirect || '/')
   } catch (e: any) {
     serverError.value = e.response?.data?.message || '이메일 또는 비밀번호를 확인해주세요'
   } finally {
