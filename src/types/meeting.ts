@@ -1,14 +1,21 @@
 export type MeetingStatus = 'OPEN' | 'CONFIRMED' | 'CANCELLED'
 
+export interface Participant {
+  id: number
+  nickname: string
+}
+
 export interface Meeting {
   id: number
   hostId: number
   title: string
   description: string | null
+  location?: string | null
   dateRangeStart: string
   dateRangeEnd: string
   confirmedDate: string | null
   status: MeetingStatus
+  participants?: Participant[]
   createdAt: string
 }
 
