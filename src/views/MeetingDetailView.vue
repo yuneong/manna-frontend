@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useMeeting, useHeatmap, useSetAvailability } from '../composables/useMeeting'
+import { useMeeting, useHeatmap, useSetAvailability, useJoinMeeting } from '../composables/useMeeting'
 import { useAuthStore } from '../stores/auth'
 import AppBadge from '../components/common/AppBadge.vue'
 import AvatarStack from '../components/common/AvatarStack.vue'
@@ -18,8 +18,15 @@ const copied = ref(false)
 const { data: meeting, isLoading } = useMeeting(meetingId)
 const { data: heatmapData } = useHeatmap(meetingId)
 const { mutate: setAvailability, isPending: isSaving } = useSetAvailability(meetingId)
+const { mutate: joinMeeting } = useJoinMeeting()
 
 const isHost = computed(() => meeting.value?.hostId === authStore.user?.id)
+
+watch(meeting, (m) => {
+  if (!m || !authStore.user) return
+  const isParticipant = m.participants?.some((p) => p.id === authStore.user!.id)
+  if (!isParticipant) joinMeeting(meetingId)
+}, { immediate: true })
 const heatmap = computed(() => heatmapData.value?.heatmap ?? {})
 const participantNames = computed(() =>
   (meeting.value?.participants ?? []).map((p) => p.nickname),
