@@ -11,7 +11,6 @@ export function useAuth() {
     authStore.setToken(res.data.accessToken)
     const userRes = await userApi.me()
     authStore.setUser(userRes.data)
-    await router.push('/')
   }
 
   async function logout() {

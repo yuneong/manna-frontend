@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue'
-import { RouterLink } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import AppLogo from '../components/common/AppLogo.vue'
 import AppInput from '../components/common/AppInput.vue'
@@ -8,6 +8,8 @@ import AppButton from '../components/common/AppButton.vue'
 import SocialButton from '../components/common/SocialButton.vue'
 
 const { login } = useAuth()
+const route = useRoute()
+const router = useRouter()
 
 const form = reactive({ email: '', password: '' })
 const touched = reactive({ email: false, password: false })
@@ -38,6 +40,8 @@ async function onSubmit() {
   serverError.value = null
   try {
     await login(form.email, form.password)
+    const redirect = route.query.redirect as string | undefined
+    await router.push(redirect || '/home')
   } catch (e: any) {
     serverError.value = e.response?.data?.message || '이메일 또는 비밀번호를 확인해주세요'
   } finally {
