@@ -16,6 +16,7 @@ export interface Meeting {
   confirmedDate: string | null
   status: MeetingStatus
   participantCount: number
+  isParticipant?: boolean
   participants?: Participant[]
   createdAt: string
 }

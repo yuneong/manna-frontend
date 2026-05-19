@@ -26,8 +26,7 @@ const isHost = computed(() => meeting.value?.hostId === authStore.user?.id)
 
 watch(meeting, (m) => {
   if (!m || !authStore.user) return
-  const isParticipant = m.participants?.some((p) => p.id === authStore.user!.id)
-  if (!isParticipant) joinMeeting(meetingId)
+  if (m.isParticipant === false) joinMeeting(meetingId)
 }, { immediate: true })
 const heatmap = computed(() => heatmapData.value?.heatmap ?? {})
 const participantNames = computed(() =>
