@@ -2,6 +2,7 @@
 import { RouterLink } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { useAuth } from '../../composables/useAuth'
+import AppLogo from '../common/AppLogo.vue'
 
 const authStore = useAuthStore()
 const { logout } = useAuth()
@@ -10,7 +11,9 @@ const { logout } = useAuth()
 <template>
   <header class="header">
     <div class="header__inner">
-      <RouterLink to="/" class="header__logo">manna</RouterLink>
+      <RouterLink to="/" class="header__logo-link">
+        <AppLogo :size="20" />
+      </RouterLink>
       <div v-if="authStore.isAuthenticated" class="header__right">
         <span class="header__nickname">{{ authStore.user?.nickname }}</span>
         <button class="header__logout" @click="logout">로그아웃</button>
@@ -36,13 +39,7 @@ const { logout } = useAuth()
   align-items: center;
   justify-content: space-between;
 }
-.header__logo {
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--color-primary);
-  text-decoration: none;
-  letter-spacing: -0.5px;
-}
+.header__logo-link { text-decoration: none; }
 .header__right {
   display: flex;
   align-items: center;

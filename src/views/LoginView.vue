@@ -1,42 +1,45 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { ref, computed, reactive } from 'vue'
 import { RouterLink } from 'vue-router'
-import { z } from 'zod'
 import { useAuth } from '../composables/useAuth'
+import AppLogo from '../components/common/AppLogo.vue'
 import AppInput from '../components/common/AppInput.vue'
 import AppButton from '../components/common/AppButton.vue'
-
-const schema = z.object({
-  email: z.string().email('올바른 이메일 형식을 입력해주세요'),
-  password: z.string().min(8, '비밀번호는 8자 이상이어야 합니다'),
-})
-
-const form = reactive({ email: '', password: '' })
-const errors = reactive<{ email?: string; password?: string }>({})
-const errorMsg = ref('')
-const loading = ref(false)
+import SocialButton from '../components/common/SocialButton.vue'
 
 const { login } = useAuth()
 
-async function onSubmit() {
-  errors.email = undefined
-  errors.password = undefined
-  errorMsg.value = ''
+const form = reactive({ email: '', password: '' })
+const touched = reactive({ email: false, password: false })
+const serverError = ref<string | null>(null)
+const loading = ref(false)
 
-  const result = schema.safeParse(form)
-  if (!result.success) {
-    result.error.issues.forEach((e: import('zod').ZodIssue) => {
-      const key = e.path[0] as keyof typeof errors
-      if (!(key in errors) || !errors[key]) errors[key] = e.message
-    })
-    return
-  }
+function validateEmail(v: string) {
+  if (!v) return '이메일을 입력해주세요'
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return '올바른 이메일 형식이 아닙니다'
+  return null
+}
+function validatePassword(v: string) {
+  if (!v) return '비밀번호를 입력해주세요'
+  return null
+}
+
+const errors = computed(() => ({
+  email: touched.email ? validateEmail(form.email) || undefined : undefined,
+  password: touched.password ? validatePassword(form.password) || undefined : undefined,
+}))
+
+async function onSubmit() {
+  touched.email = true
+  touched.password = true
+  if (errors.value.email || errors.value.password) return
 
   loading.value = true
+  serverError.value = null
   try {
     await login(form.email, form.password)
   } catch (e: any) {
-    errorMsg.value = e.response?.data?.message || '로그인에 실패했습니다.'
+    serverError.value = e.response?.data?.message || '이메일 또는 비밀번호를 확인해주세요'
   } finally {
     loading.value = false
   }
@@ -45,31 +48,78 @@ async function onSubmit() {
 
 <template>
   <div class="auth-page">
-    <div class="auth-box">
-      <h1 class="auth-logo">manna</h1>
-      <p class="auth-sub">친구들과 약속을 쉽게 잡아보세요</p>
-      <form class="auth-form" @submit.prevent="onSubmit">
-        <AppInput
-          v-model="form.email"
-          label="이메일"
-          type="email"
-          placeholder="email@example.com"
-          :error="errors.email"
-        />
-        <AppInput
-          v-model="form.password"
-          label="비밀번호"
-          type="password"
-          placeholder="8자 이상"
-          :error="errors.password"
-        />
-        <p v-if="errorMsg" class="auth-error">{{ errorMsg }}</p>
-        <AppButton type="submit" :loading="loading" :full-width="true">로그인</AppButton>
-      </form>
-      <p class="auth-link">
-        계정이 없으신가요?
-        <RouterLink to="/sign-up">회원가입</RouterLink>
-      </p>
+    <nav class="auth-nav">
+      <AppLogo :size="22" />
+      <span class="auth-nav__help">도움말</span>
+    </nav>
+
+    <div class="auth-center">
+      <div class="auth-card">
+        <div class="auth-heading">
+          <AppLogo :size="38" />
+          <h1>다시 만나서 반가워요</h1>
+          <p>친구들과 약속을 더 쉽게</p>
+        </div>
+
+        <div v-if="serverError" class="auth-server-error">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            aria-hidden="true"
+            class="auth-server-error__icon"
+          >
+            <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4" />
+            <path d="M8 4.5v4.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+            <circle cx="8" cy="11.2" r="0.8" fill="currentColor" />
+          </svg>
+          {{ serverError }}
+        </div>
+
+        <form class="auth-form" @submit.prevent="onSubmit">
+          <AppInput
+            v-model="form.email"
+            label="이메일"
+            type="email"
+            placeholder="you@example.com"
+            autocomplete="email"
+            :error="errors.email"
+            @blur="touched.email = true; serverError = null"
+          />
+          <AppInput
+            v-model="form.password"
+            label="비밀번호"
+            type="password"
+            placeholder="비밀번호 입력"
+            autocomplete="current-password"
+            :error="errors.password"
+            @blur="touched.password = true"
+          />
+
+          <div class="auth-forgot">
+            <a href="#">비밀번호 찾기</a>
+          </div>
+
+          <AppButton type="submit" :loading="loading" :full-width="true">로그인</AppButton>
+
+          <div class="auth-divider">
+            <span class="auth-divider__line" />
+            <span class="auth-divider__text">또는</span>
+            <span class="auth-divider__line" />
+          </div>
+
+          <div class="auth-social">
+            <SocialButton provider="kakao" />
+            <SocialButton provider="google" />
+          </div>
+
+          <p class="auth-switch">
+            아직 manna 회원이 아니신가요?
+            <RouterLink to="/sign-up">회원가입</RouterLink>
+          </p>
+        </form>
+      </div>
     </div>
   </div>
 </template>
@@ -77,51 +127,96 @@ async function onSubmit() {
 <style scoped>
 .auth-page {
   min-height: 100vh;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+.auth-nav {
+  padding: 20px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+.auth-nav__help {
+  font-size: 12.5px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+.auth-center {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--color-bg-secondary);
-  padding: 24px;
+  padding: 32px 24px;
+  overflow: auto;
 }
-.auth-box {
-  width: 100%;
-  max-width: 400px;
-  background: var(--color-bg-primary);
-  border-radius: var(--radius-lg);
-  padding: 40px 32px;
+.auth-card { width: 100%; max-width: 380px; }
+.auth-heading {
+  text-align: center;
+  margin-bottom: 28px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  align-items: center;
 }
-.auth-logo {
-  font-size: 32px;
-  font-weight: 800;
-  color: var(--color-primary);
-  text-align: center;
-  letter-spacing: -1px;
+.auth-heading h1 {
+  margin: 18px 0 6px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
 }
-.auth-sub {
-  text-align: center;
+.auth-heading p {
+  margin: 0;
   font-size: 14px;
   color: var(--color-text-secondary);
-  margin-top: -10px;
+  letter-spacing: -0.01em;
 }
-.auth-form {
+.auth-server-error {
   display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-.auth-error {
+  align-items: flex-start;
+  gap: 8px;
+  padding: 11px 14px;
+  background: var(--color-error-bg);
+  border: 1px solid rgba(200, 54, 43, 0.2);
+  border-radius: 10px;
   font-size: 13px;
-  color: #e53935;
-  text-align: center;
+  color: var(--color-error);
+  font-weight: 500;
+  line-height: 1.45;
+  margin-bottom: 16px;
 }
-.auth-link {
-  text-align: center;
-  font-size: 14px;
+.auth-server-error__icon { flex-shrink: 0; margin-top: 1px; }
+.auth-form { display: flex; flex-direction: column; gap: 16px; }
+.auth-forgot { display: flex; justify-content: flex-end; margin-top: -4px; }
+.auth-forgot a {
+  font-size: 13px;
   color: var(--color-text-secondary);
+  text-decoration: none;
+  font-weight: 500;
 }
-.auth-link a {
+.auth-forgot a:hover { color: var(--color-text-primary); }
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0;
+}
+.auth-divider__line { flex: 1; height: 1px; background: var(--color-border); }
+.auth-divider__text {
+  font-size: 12px;
+  color: var(--color-text-placeholder);
+  font-weight: 500;
+}
+.auth-social { display: flex; flex-direction: column; gap: 8px; }
+.auth-switch {
+  text-align: center;
+  font-size: 13.5px;
+  color: var(--color-text-secondary);
+  margin-top: 8px;
+}
+.auth-switch a {
   color: var(--color-primary);
   font-weight: 600;
   text-decoration: none;

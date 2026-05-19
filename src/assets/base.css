@@ -18,6 +18,10 @@
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 24px;
+
+  --color-error: #c8362b;
+  --color-error-bg: #fdeceb;
+  --color-text-placeholder: #9a9aa3;
 }
 
 *,

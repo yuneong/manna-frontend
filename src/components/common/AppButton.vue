@@ -37,10 +37,8 @@ withDefaults(
   border: none;
   transition: opacity 0.15s, background-color 0.15s;
 }
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+.btn:disabled { cursor: not-allowed; }
+.btn--primary:disabled { background-color: #c9c6e4; }
 .btn--full { width: 100%; }
 .btn--primary {
   background-color: var(--color-primary);
