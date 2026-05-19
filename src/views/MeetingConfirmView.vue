@@ -18,7 +18,7 @@ const heatmap = computed(() => heatmapData.value?.heatmap ?? {})
 const participantNames = computed(() =>
   (meeting.value?.participants ?? []).map((p) => p.nickname),
 )
-const totalParticipants = computed(() => participantNames.value.length)
+const totalParticipants = computed(() => meeting.value?.participantCount ?? 0)
 
 // --- Date helpers ---
 const DAYS = ['일', '월', '화', '수', '목', '금', '토']

@@ -33,7 +33,7 @@ const heatmap = computed(() => heatmapData.value?.heatmap ?? {})
 const participantNames = computed(() =>
   (meeting.value?.participants ?? []).map((p) => p.nickname),
 )
-const totalParticipants = computed(() => participantNames.value.length)
+const totalParticipants = computed(() => meeting.value?.participantCount ?? 0)
 
 // --- Date helpers ---
 const DAYS = ['일', '월', '화', '수', '목', '금', '토']
@@ -394,7 +394,7 @@ function copyLink() {
                       </span>
                     </div>
                     <div class="heat-cell__count" :style="{ color: heatTextColor(heatmap[ymd(d)] || 0, totalParticipants) }">
-                      {{ heatmap[ymd(d)] || 0 }}/{{ totalParticipants || '?' }}
+                      {{ heatmap[ymd(d)] || 0 }}/{{ totalParticipants }}
                     </div>
                     <div v-if="heatmap[ymd(d)] === maxHeatCount && maxHeatCount > 0" class="heat-cell__star">
                       <svg width="9" height="9" viewBox="0 0 10 10" fill="none" aria-hidden="true">
