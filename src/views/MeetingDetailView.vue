@@ -30,7 +30,7 @@ watch(meeting, (m) => {
 }, { immediate: true })
 const heatmap = computed(() => heatmapData.value?.heatmap ?? {})
 const participantNames = computed(() =>
-  (meeting.value?.participants ?? []).map((p) => p.nickname),
+  meeting.value?.participants.map((p) => p.nickname) ?? [],
 )
 const totalParticipants = computed(() => meeting.value?.participantCount ?? 0)
 

@@ -26,7 +26,7 @@ const dateDetail = computed(() => {
 })
 
 const participantNames = computed(() =>
-  (props.meeting.participants ?? []).map((p: Participant) => p.nickname),
+  props.meeting.participants.map((p: Participant) => p.nickname),
 )
 </script>
 

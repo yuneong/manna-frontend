@@ -17,7 +17,7 @@ export interface Meeting {
   status: MeetingStatus
   participantCount: number
   isParticipant?: boolean
-  participants?: Participant[]
+  participants: Participant[]
   createdAt: string
 }
 
