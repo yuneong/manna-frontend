@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive, onMounted } from 'vue'
 import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useAuth } from '../composables/useAuth'
 import AppLogo from '../components/common/AppLogo.vue'
@@ -12,6 +12,15 @@ const route = useRoute()
 const router = useRouter()
 
 const form = reactive({ email: '', password: '' })
+const rememberEmail = ref(false)
+
+onMounted(() => {
+  const saved = localStorage.getItem('savedEmail')
+  if (saved) {
+    form.email = saved
+    rememberEmail.value = true
+  }
+})
 const touched = reactive({ email: false, password: false })
 const serverError = ref<string | null>(null)
 const loading = ref(false)
@@ -40,6 +49,11 @@ async function onSubmit() {
   serverError.value = null
   try {
     await login(form.email, form.password)
+    if (rememberEmail.value) {
+      localStorage.setItem('savedEmail', form.email)
+    } else {
+      localStorage.removeItem('savedEmail')
+    }
     const redirect = route.query.redirect as string | undefined
     await router.push(redirect || '/')
   } catch (e: any) {
@@ -101,8 +115,12 @@ async function onSubmit() {
             @blur="touched.password = true"
           />
 
-          <div class="auth-forgot">
-            <a href="#">비밀번호 찾기</a>
+          <div class="auth-options">
+            <label class="remember-check">
+              <input type="checkbox" v-model="rememberEmail" />
+              <span>이메일 저장</span>
+            </label>
+            <a href="#" class="auth-forgot__link">비밀번호 찾기</a>
           </div>
 
           <AppButton type="submit" :loading="loading" :full-width="true">로그인</AppButton>
@@ -193,14 +211,35 @@ async function onSubmit() {
 }
 .auth-server-error__icon { flex-shrink: 0; margin-top: 1px; }
 .auth-form { display: flex; flex-direction: column; gap: 16px; }
-.auth-forgot { display: flex; justify-content: flex-end; margin-top: -4px; }
-.auth-forgot a {
+.auth-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: -4px;
+}
+.remember-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+}
+.remember-check input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+.auth-forgot__link {
   font-size: 13px;
   color: var(--color-text-secondary);
   text-decoration: none;
   font-weight: 500;
 }
-.auth-forgot a:hover { color: var(--color-text-primary); }
+.auth-forgot__link:hover { color: var(--color-text-primary); }
 .auth-divider {
   display: flex;
   align-items: center;
