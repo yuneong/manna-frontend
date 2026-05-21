@@ -29,7 +29,7 @@ export interface CreateMeetingRequest {
   dateRangeEnd: string
 }
 
-export interface AvailabilityRequest {
+export interface SchedulesRequest {
   availableDates: string[]
 }
 
@@ -43,7 +43,7 @@ export interface HeatmapResponse {
   heatmap: Record<string, HeatmapEntry>
 }
 
-export interface MyAvailabilityResponse {
+export interface MySchedulesResponse {
   meetingId: number
   availableDates: string[]
 }

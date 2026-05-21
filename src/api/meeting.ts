@@ -2,9 +2,9 @@ import client from './client'
 import type {
   Meeting,
   CreateMeetingRequest,
-  AvailabilityRequest,
+  SchedulesRequest,
   HeatmapResponse,
-  MyAvailabilityResponse,
+  MySchedulesResponse,
   ConfirmDateRequest,
 } from '../types/meeting'
 
@@ -13,11 +13,11 @@ export const meetingApi = {
   getById: (id: number) => client.get<Meeting>(`/api/v1/meetings/${id}`),
   getMy: () => client.get<Meeting[]>('/api/v1/meetings/my'),
   join: (id: number) => client.post(`/api/v1/meetings/${id}/join`),
-  setAvailability: (id: number, data: AvailabilityRequest) =>
-    client.put(`/api/v1/meetings/${id}/availability`, data),
+  saveSchedules: (id: number, data: SchedulesRequest) =>
+    client.put(`/api/v1/meetings/${id}/schedules`, data),
   getHeatmap: (id: number) => client.get<HeatmapResponse>(`/api/v1/meetings/${id}/heatmap`),
-  getMyAvailability: (id: number) =>
-    client.get<MyAvailabilityResponse>(`/api/v1/meetings/${id}/availability/me`),
+  getMySchedules: (id: number) =>
+    client.get<MySchedulesResponse>(`/api/v1/meetings/${id}/schedules/me`),
   confirm: (id: number, data: ConfirmDateRequest) =>
     client.post<Meeting>(`/api/v1/meetings/${id}/confirm`, data),
 }

@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useRouter } from 'vue-router'
 import { meetingApi } from '../api/meeting'
-import type { CreateMeetingRequest, AvailabilityRequest, ConfirmDateRequest } from '../types/meeting'
+import type { CreateMeetingRequest, SchedulesRequest, ConfirmDateRequest } from '../types/meeting'
 
 export function useMyMeetings() {
   return useQuery({
@@ -46,10 +46,10 @@ export function useJoinMeeting() {
   })
 }
 
-export function useSetAvailability(meetingId: number) {
+export function useSaveSchedules(meetingId: number) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (data: AvailabilityRequest) => meetingApi.setAvailability(meetingId, data),
+    mutationFn: (data: SchedulesRequest) => meetingApi.saveSchedules(meetingId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meetings', meetingId, 'heatmap'] })
       queryClient.invalidateQueries({ queryKey: ['meetings', meetingId] })

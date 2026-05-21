@@ -2,7 +2,7 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import dayjs from 'dayjs'
-import { useMeeting, useHeatmap, useSetAvailability, useJoinMeeting } from '../composables/useMeeting'
+import { useMeeting, useHeatmap, useSaveSchedules, useJoinMeeting } from '../composables/useMeeting'
 import { meetingApi } from '../api/meeting'
 import { useAuthStore } from '../stores/auth'
 import AppBadge from '../components/common/AppBadge.vue'
@@ -19,7 +19,7 @@ const copied = ref(false)
 
 const { data: meeting, isLoading } = useMeeting(meetingId)
 const { data: heatmapData } = useHeatmap(meetingId)
-const { mutate: setAvailability, isPending: isSaving } = useSetAvailability(meetingId)
+const { mutate: saveSchedules, isPending: isSaving } = useSaveSchedules(meetingId)
 const { mutate: joinMeeting } = useJoinMeeting()
 
 const isHost = computed(() => meeting.value?.hostId === authStore.user?.id)
@@ -110,7 +110,7 @@ const hasSavedResponse = ref(false)
 const justSaved = ref(false)
 
 function saveDates() {
-  setAvailability(
+  saveSchedules(
     { availableDates: [...selectedDates.value] },
     {
       onSuccess: () => {
@@ -124,7 +124,7 @@ function saveDates() {
 
 onMounted(async () => {
   try {
-    const res = await meetingApi.getMyAvailability(meetingId)
+    const res = await meetingApi.getMySchedules(meetingId)
     selectedDates.value = new Set(res.data.availableDates)
     hasSavedResponse.value = true
   } catch {
