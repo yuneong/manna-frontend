@@ -67,7 +67,7 @@ const participantNames = computed(() =>
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true" class="card__meta-icon">
           <path d="M1.5 9.5L4 4l2.5 4L9 2l2.5 7.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
-        <span class="card__vote-text">{{ participantNames.length }}명 참여</span>
+        <span class="card__vote-text">{{ meeting.participantCount }}명 참여</span>
       </div>
     </div>
   </RouterLink>

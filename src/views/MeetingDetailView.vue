@@ -202,7 +202,9 @@ function copyLink() {
           <div class="mcard__footer">
             <div class="mcard__participants">
               <AvatarStack :names="participantNames" />
-              <span class="mcard__participants-label">{{ participantNames.length }}명 참여</span>
+              <span class="mcard__participants-label">
+                {{ meeting.responseCount }}/{{ meeting.participantCount }}명 응답
+              </span>
             </div>
             <button :class="['copy-btn', copied && 'copy-btn--copied']" @click="copyLink">
               <template v-if="copied">
