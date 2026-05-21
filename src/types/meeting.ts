@@ -30,7 +30,7 @@ export interface CreateMeetingRequest {
 }
 
 export interface SchedulesRequest {
-  availableDates: string[]
+  scheduledDates: string[]
 }
 
 export interface HeatmapEntry {
@@ -45,7 +45,7 @@ export interface HeatmapResponse {
 
 export interface MySchedulesResponse {
   meetingId: number
-  availableDates: string[]
+  scheduledDates: string[]
 }
 
 export interface ConfirmDateRequest {

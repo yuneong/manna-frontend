@@ -111,7 +111,7 @@ const justSaved = ref(false)
 
 function saveDates() {
   saveSchedules(
-    { availableDates: [...selectedDates.value] },
+    { scheduledDates: [...selectedDates.value] },
     {
       onSuccess: () => {
         hasSavedResponse.value = true
@@ -125,7 +125,7 @@ function saveDates() {
 onMounted(async () => {
   try {
     const res = await meetingApi.getMySchedules(meetingId)
-    selectedDates.value = new Set(res.data.availableDates)
+    selectedDates.value = new Set(res.data.scheduledDates)
     hasSavedResponse.value = true
   } catch {
     // 404(미참여) 등 에러 시 빈 상태 유지
