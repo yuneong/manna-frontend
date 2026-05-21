@@ -20,4 +20,5 @@ export const meetingApi = {
     client.get<MySchedulesResponse>(`/api/v1/meetings/${id}/schedules/me`),
   confirm: (id: number, data: ConfirmDateRequest) =>
     client.post<Meeting>(`/api/v1/meetings/${id}/confirm`, data),
+  cancelConfirm: (id: number) => client.delete(`/api/v1/meetings/${id}/confirm`),
 }

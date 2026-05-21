@@ -57,6 +57,16 @@ export function useSaveSchedules(meetingId: number) {
   })
 }
 
+export function useCancelConfirm(meetingId: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => meetingApi.cancelConfirm(meetingId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['meetings', meetingId] })
+    },
+  })
+}
+
 export function useConfirmDate(meetingId: number) {
   const router = useRouter()
   const queryClient = useQueryClient()
