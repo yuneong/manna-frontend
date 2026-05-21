@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, reactive } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
+import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { userApi } from '../api/user'
 import AppLogo from '../components/common/AppLogo.vue'
 import AppInput from '../components/common/AppInput.vue'
 import AppButton from '../components/common/AppButton.vue'
 import SocialButton from '../components/common/SocialButton.vue'
 
+const route = useRoute()
 const router = useRouter()
 
 const form = reactive({ email: '', password: '', nickname: '' })
@@ -49,7 +50,8 @@ async function onSubmit() {
   serverError.value = null
   try {
     await userApi.signUp({ email: form.email, password: form.password, nickname: form.nickname })
-    await router.push('/login')
+    const redirect = route.query.redirect as string | undefined
+    await router.push({ name: 'login', query: redirect ? { redirect } : {} })
   } catch (e: any) {
     if (e.response?.status === 409) {
       emailServerError.value = '이미 사용 중인 이메일입니다'
@@ -142,7 +144,7 @@ async function onSubmit() {
 
           <p class="auth-switch">
             이미 계정이 있으신가요?
-            <RouterLink to="/login">로그인</RouterLink>
+            <RouterLink :to="{ name: 'login', query: route.query.redirect ? { redirect: route.query.redirect } : {} }">로그인</RouterLink>
           </p>
         </form>
       </div>

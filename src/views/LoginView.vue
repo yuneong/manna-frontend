@@ -120,7 +120,7 @@ async function onSubmit() {
 
           <p class="auth-switch">
             아직 manna 회원이 아니신가요?
-            <RouterLink to="/sign-up">회원가입</RouterLink>
+            <RouterLink :to="{ name: 'sign-up', query: route.query.redirect ? { redirect: route.query.redirect } : {} }">회원가입</RouterLink>
           </p>
         </form>
       </div>
