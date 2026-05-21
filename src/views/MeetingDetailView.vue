@@ -28,7 +28,10 @@ watch(meeting, (m) => {
   if (!m || !authStore.user) return
   if (m.isParticipant === false) joinMeeting(meetingId)
 }, { immediate: true })
-const heatmap = computed(() => heatmapData.value?.heatmap ?? {})
+const heatmap = computed(() => {
+  const raw = heatmapData.value?.heatmap ?? {}
+  return Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, v.count]))
+})
 const participantNames = computed(() =>
   meeting.value?.participants.map((p) => p.nickname) ?? [],
 )

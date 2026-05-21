@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import dayjs from 'dayjs'
 import { useMeeting, useHeatmap, useConfirmDate } from '../composables/useMeeting'
 
 const route = useRoute()
@@ -15,10 +16,12 @@ const { data: heatmapData } = useHeatmap(meetingId)
 const { mutate: confirmDate, isPending } = useConfirmDate(meetingId)
 
 const heatmap = computed(() => heatmapData.value?.heatmap ?? {})
-const participantNames = computed(() =>
-  (meeting.value?.participants ?? []).map((p) => p.nickname),
-)
+const participants = computed(() => meeting.value?.participants ?? [])
 const totalParticipants = computed(() => meeting.value?.participantCount ?? 0)
+
+function heatCount(key: string): number {
+  return heatmap.value[key]?.count ?? 0
+}
 
 // --- Date helpers ---
 const DAYS = ['일', '월', '화', '수', '목', '금', '토']
@@ -31,7 +34,11 @@ function startOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate())
 }
 function ymd(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  return dayjs(d).format('YYYY-MM-DD')
+}
+function parseLocalDate(s: string): Date {
+  const [y, m, d] = s.split('-').map(Number)
+  return new Date(y, m - 1, d)
 }
 function fmtDateKo(d: Date): string {
   return `${d.getMonth()+1}월 ${d.getDate()}일 (${DAYS[d.getDay()]})`
@@ -46,8 +53,8 @@ function inRange(d: Date, s: Date, e: Date): boolean {
   return dd >= startOfDay(s) && dd <= startOfDay(e)
 }
 
-const startDate = computed(() => meeting.value ? new Date(meeting.value.dateRangeStart) : null)
-const endDate = computed(() => meeting.value ? new Date(meeting.value.dateRangeEnd) : null)
+const startDate = computed(() => meeting.value ? parseLocalDate(meeting.value.dateRangeStart) : null)
+const endDate = computed(() => meeting.value ? parseLocalDate(meeting.value.dateRangeEnd) : null)
 
 // Calendar navigation
 const calYear = ref(0)
@@ -77,24 +84,45 @@ function nextMonth() {
 
 // Derived state for selected date
 const selectedKey = computed(() => selectedDate.value ? ymd(selectedDate.value) : null)
-const selectedCount = computed(() => (selectedKey.value ? heatmap.value[selectedKey.value] : 0) ?? 0)
+const selectedCount = computed(() => selectedKey.value ? heatCount(selectedKey.value) : 0)
 const isAllAvailable = computed(() => totalParticipants.value > 0 && selectedCount.value === totalParticipants.value)
 const isPartial = computed(() => selectedCount.value > 0 && selectedCount.value < totalParticipants.value)
 
-// Heatmap helpers
-function heatColor(count: number, total: number): string {
-  if (!count || !total) return 'transparent'
-  return `hsl(247, 50%, ${92 - (count / total) * 55}%)`
-}
-function heatTextColor(count: number, total: number): string {
-  if (!count) return 'var(--color-text-placeholder)'
-  return count / total > 0.55 ? '#fff' : 'var(--color-primary)'
-}
+const availableIds = computed(() =>
+  new Set(selectedKey.value ? (heatmap.value[selectedKey.value]?.availableParticipantIds ?? []) : [])
+)
+const availableParticipants = computed(() =>
+  participants.value.filter((p) => availableIds.value.has(p.id))
+)
+const unavailableParticipants = computed(() =>
+  participants.value.filter((p) => !availableIds.value.has(p.id))
+)
 
-const legendSteps = computed(() => {
-  const t = totalParticipants.value || 4
-  return [1, Math.ceil(t / 3), Math.ceil((2 * t) / 3), t]
-})
+// Ratio-based 4-step color buckets
+const BUCKET_BG: Record<string, string> = {
+  none:  '#FAFAFB',
+  light: '#E5E2F4',
+  mid:   '#B0A8DE',
+  dark:  '#7569C6',
+  full:  '#3F3795',
+}
+const BUCKET_FG: Record<string, string> = {
+  none:  'var(--color-text-placeholder)',
+  light: 'var(--color-primary)',
+  mid:   '#fff',
+  dark:  '#fff',
+  full:  '#fff',
+}
+function ratioBucket(count: number, total: number): string {
+  if (!count) return 'none'
+  if (!total || count >= total) return 'full'
+  const r = count / total
+  if (r < 0.34) return 'light'
+  if (r < 0.67) return 'mid'
+  return 'dark'
+}
+function bucketBg(count: number, total: number) { return BUCKET_BG[ratioBucket(count, total)] }
+function bucketFg(count: number, total: number) { return BUCKET_FG[ratioBucket(count, total)] }
 
 // Participant avatar palette
 const palette = ['#534AB7','#0F6E56','#C8362B','#D89B1A','#3B70C9','#8E4FBE']
@@ -143,10 +171,7 @@ function confirm() {
             방장 전용 · 날짜 확정
           </div>
           <h1>{{ meeting.title }}의 날짜를 확정해요</h1>
-          <p>
-            전원 가능한 날짜는 <span class="confirm__hint-green">초록 테두리</span>로 표시했어요.
-            확정 후에는 변경할 수 없으니 신중하게 골라주세요.
-          </p>
+          <p>진한 색일수록 더 많은 사람이 가능한 날짜예요. 클릭해서 골라주세요.</p>
         </div>
 
         <!-- Server error -->
@@ -178,15 +203,6 @@ function confirm() {
                   </svg>
                 </button>
               </div>
-              <div class="heat-legend">
-                <span class="heat-legend__label">1명</span>
-                <div
-                  v-for="s in legendSteps" :key="s"
-                  class="heat-legend__swatch"
-                  :style="{ background: heatColor(s, totalParticipants || 4) }"
-                />
-                <span class="heat-legend__label">전원</span>
-              </div>
             </div>
 
             <div class="cal-weekdays">
@@ -201,34 +217,34 @@ function confirm() {
                   <div
                     :class="[
                       'heat-cell',
-                      !heatmap[ymd(d)] && 'heat-cell--empty',
+                      !heatCount(ymd(d)) && 'heat-cell--empty',
                       selectedKey === ymd(d) && 'heat-cell--selected',
-                      selectedKey !== ymd(d) && heatmap[ymd(d)] === totalParticipants && totalParticipants > 0 && 'heat-cell--all',
                     ]"
                     :style="{
-                      background: heatmap[ymd(d)] ? heatColor(heatmap[ymd(d)], totalParticipants) : '#FAFAFB',
-                      cursor: heatmap[ymd(d)] ? 'pointer' : 'not-allowed',
+                      background: bucketBg(heatCount(ymd(d)), totalParticipants),
+                      cursor: heatCount(ymd(d)) ? 'pointer' : 'not-allowed',
                     }"
-                    @click="heatmap[ymd(d)] && (selectedDate = d)"
+                    @click="heatCount(ymd(d)) && (selectedDate = d)"
                   >
                     <div class="heat-cell__top-row">
-                      <span class="heat-cell__num" :style="{ color: heatTextColor(heatmap[ymd(d)] || 0, totalParticipants) }">
+                      <span class="heat-cell__num" :style="{ color: bucketFg(heatCount(ymd(d)), totalParticipants) }">
                         {{ d.getDate() }}
                       </span>
-                      <span class="heat-cell__dow" :style="{ color: heatTextColor(heatmap[ymd(d)] || 0, totalParticipants) }">
+                      <span class="heat-cell__dow" :style="{ color: bucketFg(heatCount(ymd(d)), totalParticipants) }">
                         {{ DAYS[d.getDay()] }}
                       </span>
                     </div>
-                    <div class="heat-cell__count" :style="{ color: heatTextColor(heatmap[ymd(d)] || 0, totalParticipants) }">
-                      {{ heatmap[ymd(d)] || 0 }}/{{ totalParticipants }}
+                    <div class="heat-cell__count" :style="{ color: bucketFg(heatCount(ymd(d)), totalParticipants) }">
+                      {{ heatCount(ymd(d)) ? `${heatCount(ymd(d))}/${totalParticipants}` : '' }}
                     </div>
-                    <!-- All-available badge -->
+                    <!-- 금색 별: 전원 가능, 선택 여부 무관 -->
                     <div
-                      v-if="selectedKey !== ymd(d) && heatmap[ymd(d)] === totalParticipants && totalParticipants > 0"
-                      class="heat-cell__all-badge"
+                      v-if="heatCount(ymd(d)) >= totalParticipants && totalParticipants > 0"
+                      class="heat-cell__star"
+                      title="모두 가능한 날짜"
                     >
-                      <svg width="9" height="9" viewBox="0 0 9 9" fill="none" aria-hidden="true">
-                        <path d="M2 5l1.5 1.5 4-4" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                      <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+                        <path d="M5.5 1.2l1.2 2.6 2.85.32-2.13 1.93.6 2.78L5.5 7.42 2.98 8.85l.6-2.78L1.45 4.14l2.85-.32L5.5 1.2z" fill="#fff"/>
                       </svg>
                     </div>
                   </div>
@@ -239,19 +255,29 @@ function confirm() {
               </div>
             </div>
 
-            <!-- Legend keys -->
+            <!-- Legend -->
             <div class="cal-card__legend">
+              <div class="legend-group">
+                <span class="legend-text">1명</span>
+                <span
+                  v-for="bg in ['#E5E2F4', '#B0A8DE', '#7569C6', '#3F3795']"
+                  :key="bg"
+                  class="legend-swatch"
+                  :style="{ background: bg }"
+                />
+                <span class="legend-text">전원 ({{ totalParticipants }}명)</span>
+              </div>
               <span class="legend-item">
-                <span class="legend-swatch legend-swatch--all" :style="{ background: heatColor(totalParticipants || 4, totalParticipants || 4) }" />
-                전원 가능
+                <span class="legend-star-badge">
+                  <svg width="9" height="9" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+                    <path d="M5.5 1.2l1.2 2.6 2.85.32-2.13 1.93.6 2.78L5.5 7.42 2.98 8.85l.6-2.78L1.45 4.14l2.85-.32L5.5 1.2z" fill="#fff"/>
+                  </svg>
+                </span>
+                전원 가능 (추천)
               </span>
               <span class="legend-item">
                 <span class="legend-swatch legend-swatch--selected" />
                 선택됨
-              </span>
-              <span class="legend-item">
-                <span class="legend-swatch legend-swatch--empty" />
-                응답 없음
               </span>
             </div>
           </div>
@@ -268,8 +294,7 @@ function confirm() {
             </div>
             <div class="date-card__empty-title">확정할 날짜를 선택해주세요</div>
             <div class="date-card__empty-sub">
-              캘린더에서 날짜를 클릭하면<br>
-              가능 인원을 미리 볼 수 있어요
+              진한 색일수록 더 많은 사람이<br>참여 가능한 날짜예요
             </div>
           </div>
 
@@ -316,8 +341,8 @@ function confirm() {
                 <circle cx="7" cy="10" r="0.7" fill="#D89B1A"/>
               </svg>
               <span>
-                <b>{{ totalParticipants - selectedCount }}명</b>은 참여할 수 없습니다.
-                정말 이 날짜로 확정하시겠어요?
+                <b>{{ unavailableParticipants.map(p => p.nickname).join(', ') }}</b>은(는)
+                참여할 수 없어요. 정말 이 날짜로 확정하시겠어요?
               </span>
             </div>
 
@@ -328,14 +353,29 @@ function confirm() {
               </div>
               <div class="date-participants__grid">
                 <div
-                  v-for="name in participantNames"
-                  :key="name"
+                  v-for="p in availableParticipants"
+                  :key="p.id"
                   class="participant"
                 >
-                  <div class="participant__avatar" :style="{ background: avatarColor(name) }">
-                    {{ name[0] }}
+                  <div class="participant__avatar" :style="{ background: avatarColor(p.nickname) }">
+                    {{ p.nickname[0] }}
                   </div>
-                  <span class="participant__name">{{ name }}</span>
+                  <span class="participant__name">{{ p.nickname }}</span>
+                </div>
+                <div
+                  v-for="p in unavailableParticipants"
+                  :key="p.id"
+                  class="participant participant--dim"
+                >
+                  <div class="participant__avatar participant__avatar--dim">
+                    {{ p.nickname[0] }}
+                    <div class="participant__x">
+                      <svg width="7" height="7" viewBox="0 0 7 7" fill="none" aria-hidden="true">
+                        <path d="M1.5 1.5l4 4M5.5 1.5l-4 4" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>
+                      </svg>
+                    </div>
+                  </div>
+                  <span class="participant__name participant__name--dim">{{ p.nickname }}</span>
                 </div>
               </div>
             </div>
@@ -443,7 +483,6 @@ function confirm() {
   color: var(--color-text-secondary);
   letter-spacing: -0.01em;
 }
-.confirm__hint-green { color: var(--color-success); font-weight: 600; }
 
 /* Server error */
 .confirm__server-error {
@@ -483,7 +522,6 @@ function confirm() {
   justify-content: space-between;
   margin-bottom: 14px;
   gap: 12px;
-  flex-wrap: wrap;
 }
 .cal-card__top-left {
   display: flex;
@@ -511,15 +549,6 @@ function confirm() {
 }
 .cal-nav-btn:hover:not(:disabled) { background: #f4f4f6; }
 .cal-nav-btn:disabled { opacity: 0.25; cursor: default; }
-
-/* Heat legend */
-.heat-legend { display: flex; align-items: center; gap: 4px; }
-.heat-legend__label { font-size: 11.5px; color: var(--color-text-secondary); font-weight: 500; }
-.heat-legend__swatch {
-  width: 18px; height: 14px;
-  border-radius: 3px;
-  border: 1px solid rgba(0,0,0,0.04);
-}
 
 /* Weekdays + grid */
 .cal-weekdays {
@@ -563,15 +592,14 @@ function confirm() {
   flex-direction: column;
   justify-content: space-between;
   position: relative;
-  transition: transform 0.12s, box-shadow 0.12s;
+  transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
   box-sizing: border-box;
 }
 .heat-cell--empty { border-color: #EFEFF3; }
-.heat-cell--all { border: 2px solid var(--color-success); }
 .heat-cell--selected {
-  border: 2px solid var(--color-primary);
-  transform: scale(1.03);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+  border: 2.5px solid var(--color-success) !important;
+  box-shadow: 0 0 0 4px rgba(15, 110, 86, 0.20);
+  transform: scale(1.02);
   z-index: 1;
 }
 .heat-cell:not(.heat-cell--empty):not(.heat-cell--selected):hover {
@@ -583,15 +611,18 @@ function confirm() {
 .heat-cell__num { font-size: 17px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
 .heat-cell__dow { font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em; opacity: 0.85; }
 .heat-cell__count { font-size: 12.5px; font-weight: 700; letter-spacing: -0.01em; }
-.heat-cell__all-badge {
+.heat-cell__star {
   position: absolute;
-  top: -6px; right: -6px;
-  width: 18px; height: 18px;
-  background: var(--color-success);
+  top: -7px; right: -7px;
+  width: 22px; height: 22px;
   border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 2px 6px rgba(15, 110, 86, 0.35);
-  border: 2px solid #fff;
+  background: #F5C518;
+  border: 2.5px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  z-index: 2;
 }
 
 /* Calendar legend */
@@ -601,24 +632,55 @@ function confirm() {
   border-top: 1px solid var(--color-border);
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
   flex-wrap: wrap;
+}
+.legend-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.legend-text {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+.legend-swatch {
+  width: 18px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
+  display: inline-block;
+}
+.legend-swatch--selected {
+  width: 22px;
+  height: 18px;
+  border-radius: 5px;
+  border: 2.5px solid var(--color-success);
+  background: #3F3795;
+  box-sizing: border-box;
+  box-shadow: 0 0 0 2px rgba(15, 110, 86, 0.20);
 }
 .legend-item {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12.5px;
+  font-size: 12px;
   color: var(--color-text-secondary);
+  font-weight: 500;
 }
-.legend-swatch {
-  width: 14px; height: 14px;
-  border-radius: 3px;
+.legend-star-badge {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #F5C518;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
 }
-.legend-swatch--all { border: 2px solid var(--color-success); }
-.legend-swatch--selected { border: 2px solid var(--color-primary); background: rgba(83,74,183,0.12); }
-.legend-swatch--empty { border: 1px solid #EFEFF3; background: #FAFAFB; }
 
 /* Date detail card */
 .date-card {
@@ -808,6 +870,23 @@ function confirm() {
   color: var(--color-text-primary);
   letter-spacing: -0.01em;
 }
+.participant--dim { opacity: 0.45; }
+.participant__avatar--dim {
+  background: #EFEFF3 !important;
+  color: var(--color-text-placeholder);
+  box-shadow: none;
+  position: relative;
+}
+.participant__x {
+  position: absolute;
+  bottom: -2px; right: -2px;
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  background: #C8362B;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid #fff;
+}
+.participant__name--dim { color: var(--color-text-placeholder); }
 
 /* Action bar */
 .action-bar {
@@ -848,13 +927,13 @@ function confirm() {
   font-family: inherit;
   min-width: 200px;
   flex-shrink: 0;
-  transition: background 0.12s, box-shadow 0.12s;
+  transition: background 0.12s, box-shadow 0.12s, filter 0.12s;
   box-shadow: 0 2px 6px rgba(15, 110, 86, 0.28);
 }
 .confirm-btn--success { background: var(--color-success); }
 .confirm-btn--warning { background: #B07614; box-shadow: 0 2px 6px rgba(176, 118, 20, 0.28); }
-.confirm-btn--success:hover:not(:disabled) { background: #0A5A47; box-shadow: 0 6px 18px rgba(15, 110, 86, 0.28); }
-.confirm-btn--warning:hover:not(:disabled) { background: #8E5E0F; }
+.confirm-btn--success:hover:not(:disabled) { filter: brightness(0.92); box-shadow: 0 6px 18px rgba(15, 110, 86, 0.28); }
+.confirm-btn--warning:hover:not(:disabled) { filter: brightness(0.92); }
 .confirm-btn--disabled, .confirm-btn:disabled {
   background: #C9CECD;
   cursor: not-allowed;
@@ -876,7 +955,7 @@ function confirm() {
   .cal-card { padding: 14px 12px; }
   .heat-cell__num { font-size: 14px; }
   .heat-cell__count { font-size: 11px; }
-  .heat-cell__all-badge { display: none; }
+  .heat-cell__star { display: none; }
   .action-bar { flex-direction: column; }
   .confirm-btn { width: 100%; }
   .action-bar__label { text-align: center; }

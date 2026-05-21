@@ -33,9 +33,14 @@ export interface AvailabilityRequest {
   availableDates: string[]
 }
 
+export interface HeatmapEntry {
+  count: number
+  availableParticipantIds: number[]
+}
+
 export interface HeatmapResponse {
   meetingId: number
-  heatmap: Record<string, number>
+  heatmap: Record<string, HeatmapEntry>
 }
 
 export interface MyAvailabilityResponse {
