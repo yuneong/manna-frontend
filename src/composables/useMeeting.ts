@@ -52,6 +52,7 @@ export function useSetAvailability(meetingId: number) {
     mutationFn: (data: AvailabilityRequest) => meetingApi.setAvailability(meetingId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meetings', meetingId, 'heatmap'] })
+      queryClient.invalidateQueries({ queryKey: ['meetings', meetingId] })
     },
   })
 }
