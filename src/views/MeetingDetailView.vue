@@ -1483,12 +1483,21 @@ function copyLink() {
   .mcard__title { font-size: 19px; }
   .confirmed-date-strip { flex-direction: column; gap: 10px; }
   .confirmed-date-strip__title { font-size: 17px; }
-  .cal-card { padding: 14px 12px; }
-  .select-cell__num { font-size: 14px; }
-  .heat-cell__num { font-size: 13px; }
-  .heat-cell__count { font-size: 11px; }
+  .cal-card { padding: 12px 10px; }
+  .cal-grid { gap: 2px; }
+  .cal-weekday { font-size: 10px; padding: 4px 0; }
+  .select-cell { padding: 4px 5px; border-radius: 7px; }
+  .select-cell__num { font-size: 12px; }
+  .select-cell__day { font-size: 9px; }
+  .select-cell__check { width: 11px; height: 11px; top: 4px; right: 4px; }
+  .cal-grid__empty { font-size: 10px; padding: 4px 5px; }
+  .heat-cell { padding: 4px 5px; border-radius: 7px; }
+  .heat-cell__num { font-size: 11px; }
+  .heat-cell__dow { font-size: 9px; }
+  .heat-cell__count { font-size: 9px; }
   .heat-cell__star { display: none; }
-  .heat-cell__confirmed-badge { width: 18px; height: 18px; top: -5px; right: -5px; }
+  .heat-cell__confirmed-badge { width: 16px; height: 16px; top: -5px; right: -5px; }
+  .heat-cell__confirmed-badge svg { width: 8px; height: 8px; }
   .host-cta { flex-direction: column; align-items: flex-start; }
   .host-cta__btn { width: 100%; text-align: center; }
   .host-confirmed-actions { flex-direction: column; align-items: flex-start; }
