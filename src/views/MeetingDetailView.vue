@@ -138,7 +138,7 @@ onMounted(async () => {
   try {
     const res = await meetingApi.getMySchedules(meetingId)
     selectedDates.value = new Set(res.data.scheduledDates)
-    hasSavedResponse.value = true
+    hasSavedResponse.value = res.data.scheduledDates.length > 0
   } catch {
     // 404(미참여) 등 에러 시 빈 상태 유지
   }
