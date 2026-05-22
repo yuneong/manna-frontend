@@ -213,7 +213,7 @@ function copyLink() {
       <div class="detail__inner">
 
         <!-- Back -->
-        <button class="back-btn" @click="router.back()">
+        <button class="back-btn" @click="router.push('/')">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
             <path d="M8.5 3l-4 4 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
