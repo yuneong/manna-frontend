@@ -577,7 +577,7 @@ function copyLink() {
           </div>
 
           <!-- 동률 배너 (방장 전용, 재투표 없을 때) -->
-          <div v-else-if="!isConfirmed && isHost && hasTie" class="tie-banner">
+          <div v-if="!isConfirmed && isHost && hasTie && !hasActiveRevote" class="tie-banner">
             <div class="tie-banner__icon">
               <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
                 <path d="M11 4v15M3 4h16" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
@@ -610,7 +610,7 @@ function copyLink() {
           </div>
 
           <!-- OPEN: Host CTA (동률 없고 재투표 없을 때) -->
-          <div v-else-if="!isConfirmed && isHost && meeting.status === 'OPEN'" class="host-cta">
+          <div v-if="!isConfirmed && isHost && !hasTie && !hasActiveRevote && meeting.status === 'OPEN'" class="host-cta">
             <div class="host-cta__icon">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                 <path d="M3 8l3.5 3.5L13 5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
