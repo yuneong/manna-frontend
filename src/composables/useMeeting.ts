@@ -1,7 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useRouter } from 'vue-router'
 import { meetingApi } from '../api/meeting'
-import type { CreateMeetingRequest, SchedulesRequest, ConfirmDateRequest } from '../types/meeting'
+import type {
+  CreateMeetingRequest,
+  SchedulesRequest,
+  ConfirmDateRequest,
+  CreateRevoteRequest,
+  VoteRevoteRequest,
+  ConfirmRevoteRequest,
+} from '../types/meeting'
 
 export function useMyMeetings() {
   return useQuery({
@@ -75,6 +82,61 @@ export function useConfirmDate(meetingId: number) {
       meetingApi.confirm(meetingId, data).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meetings', meetingId] })
+      router.push(`/meetings/${meetingId}`)
+    },
+  })
+}
+
+export function useRevote(meetingId: number, refetchInterval: number | false = false) {
+  return useQuery({
+    queryKey: ['meetings', meetingId, 'revote'],
+    queryFn: async () => {
+      try {
+        const r = await meetingApi.getRevote(meetingId)
+        return r.data
+      } catch (e: any) {
+        if (e.response?.status === 404) return null
+        throw e
+      }
+    },
+    retry: false,
+    refetchInterval,
+  })
+}
+
+export function useCreateRevote(meetingId: number) {
+  const router = useRouter()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: CreateRevoteRequest) =>
+      meetingApi.createRevote(meetingId, data).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['meetings', meetingId, 'revote'] })
+      router.push(`/meetings/${meetingId}/revote`)
+    },
+  })
+}
+
+export function useVoteRevote(meetingId: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: VoteRevoteRequest) =>
+      meetingApi.voteRevote(meetingId, data).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['meetings', meetingId, 'revote'] })
+    },
+  })
+}
+
+export function useConfirmRevote(meetingId: number) {
+  const router = useRouter()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: ConfirmRevoteRequest) =>
+      meetingApi.confirmRevote(meetingId, data).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['meetings', meetingId] })
+      queryClient.invalidateQueries({ queryKey: ['meetings', meetingId, 'revote'] })
       router.push(`/meetings/${meetingId}`)
     },
   })

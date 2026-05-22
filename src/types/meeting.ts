@@ -51,3 +51,31 @@ export interface MySchedulesResponse {
 export interface ConfirmDateRequest {
   confirmedDate: string
 }
+
+export type RevoteStatus = 'OPEN' | 'CLOSED'
+
+export interface RevoteCandidate {
+  date: string
+  count: number
+  voters: string[]
+}
+
+export interface RevoteResponse {
+  status: RevoteStatus
+  candidates: RevoteCandidate[]
+  votedCount: number
+  totalCount: number
+  myVotedDate: string | null
+}
+
+export interface CreateRevoteRequest {
+  candidateDates: string[]
+}
+
+export interface VoteRevoteRequest {
+  votedDate: string
+}
+
+export interface ConfirmRevoteRequest {
+  confirmedDate: string
+}

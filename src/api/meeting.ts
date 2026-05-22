@@ -6,6 +6,10 @@ import type {
   HeatmapResponse,
   MySchedulesResponse,
   ConfirmDateRequest,
+  RevoteResponse,
+  CreateRevoteRequest,
+  VoteRevoteRequest,
+  ConfirmRevoteRequest,
 } from '../types/meeting'
 
 export const meetingApi = {
@@ -21,4 +25,11 @@ export const meetingApi = {
   confirm: (id: number, data: ConfirmDateRequest) =>
     client.post<Meeting>(`/api/v1/meetings/${id}/confirm`, data),
   cancelConfirm: (id: number) => client.delete(`/api/v1/meetings/${id}/confirm`),
+  getRevote: (id: number) => client.get<RevoteResponse>(`/api/v1/meetings/${id}/revote`),
+  createRevote: (id: number, data: CreateRevoteRequest) =>
+    client.post<RevoteResponse>(`/api/v1/meetings/${id}/revote`, data),
+  voteRevote: (id: number, data: VoteRevoteRequest) =>
+    client.post<RevoteResponse>(`/api/v1/meetings/${id}/revote/vote`, data),
+  confirmRevote: (id: number, data: ConfirmRevoteRequest) =>
+    client.post<Meeting>(`/api/v1/meetings/${id}/revote/confirm`, data),
 }
