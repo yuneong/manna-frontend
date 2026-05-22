@@ -2,7 +2,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import dayjs from 'dayjs'
-import { useMeeting, useHeatmap, useSaveSchedules, useJoinMeeting, useCancelConfirm } from '../composables/useMeeting'
+import { useMeeting, useHeatmap, useSaveSchedules, useJoinMeeting, useCancelConfirm, useRevote } from '../composables/useMeeting'
 import { meetingApi } from '../api/meeting'
 import { useAuthStore } from '../stores/auth'
 import AppBadge from '../components/common/AppBadge.vue'
@@ -21,12 +21,14 @@ const toast = ref<string | null>(null)
 
 const { data: meeting, isLoading } = useMeeting(meetingId)
 const { data: heatmapData } = useHeatmap(meetingId)
+const { data: revoteData } = useRevote(meetingId)
 const { mutate: saveSchedules, isPending: isSaving } = useSaveSchedules(meetingId)
 const { mutate: joinMeeting } = useJoinMeeting()
 const { mutate: cancelConfirm, isPending: isCancelling } = useCancelConfirm(meetingId)
 
 const isHost = computed(() => meeting.value?.hostId === authStore.user?.id)
 const isConfirmed = computed(() => meeting.value?.status === 'CONFIRMED')
+const hasActiveRevote = computed(() => revoteData.value?.status === 'OPEN')
 
 watch(meeting, (m) => {
   if (!m || !authStore.user) return
@@ -106,14 +108,14 @@ function nextMonth() {
 }
 
 function toggleDate(d: Date) {
-  if (isConfirmed.value) return
+  if (isConfirmed.value || hasActiveRevote.value) return
   const key = ymd(d)
   const next = new Set(selectedDates.value)
   if (next.has(key)) next.delete(key); else next.add(key)
   selectedDates.value = next
 }
 function clearAll() {
-  if (isConfirmed.value) return
+  if (isConfirmed.value || hasActiveRevote.value) return
   selectedDates.value = new Set()
 }
 
@@ -121,7 +123,7 @@ const hasSavedResponse = ref(false)
 const justSaved = ref(false)
 
 function saveDates() {
-  if (isConfirmed.value) return
+  if (isConfirmed.value || hasActiveRevote.value) return
   saveSchedules(
     { scheduledDates: [...selectedDates.value] },
     {
@@ -160,6 +162,13 @@ const maxHeatCount = computed(() => {
 })
 const recommendedCount = computed(() =>
   Object.values(heatmap.value).filter((v) => v === maxHeatCount.value && v > 0).length
+)
+const hasTie = computed(() => recommendedCount.value >= 2)
+const tiedDateList = computed(() =>
+  Object.entries(heatmap.value)
+    .filter(([_, count]) => count === maxHeatCount.value && count > 0)
+    .map(([key]) => parseLocalDate(key))
+    .sort((a, b) => a.getTime() - b.getTime()),
 )
 const legendSteps = computed(() => {
   const t = totalParticipants.value || 4
@@ -300,6 +309,27 @@ function copyLink() {
           </div>
         </template>
 
+        <!-- 재투표 진행 중 배너: 탭과 무관하게 항상 노출 -->
+        <div v-if="!isConfirmed && hasActiveRevote" class="revote-active-banner">
+          <div class="revote-active-banner__icon">
+            <span class="revote-active-dot" />
+          </div>
+          <div class="revote-active-banner__body">
+            <div class="revote-active-banner__chip">재투표 진행 중</div>
+            <div class="revote-active-banner__title">
+              {{ isHost ? '재투표가 열려 있어요. 투표하고 결과를 확인하세요.' : '방장이 재투표를 열었어요. 투표해주세요.' }}
+            </div>
+          </div>
+          <div class="revote-active-banner__btns">
+            <button class="revote-active-banner__btn revote-active-banner__btn--ghost" @click="router.push(`/meetings/${meetingId}/revote?view=vote`)">
+              투표하러 가기
+            </button>
+            <button v-if="isHost" class="revote-active-banner__btn" @click="router.push(`/meetings/${meetingId}/revote`)">
+              결과 확인하기
+            </button>
+          </div>
+        </div>
+
         <!-- Tabs -->
         <div class="tabs">
           <button :class="['tab', tab === 'mine' && 'tab--active']" @click="tab = 'mine'">
@@ -338,6 +368,20 @@ function copyLink() {
             </div>
           </div>
 
+          <!-- Locked banner (재투표 진행 중) -->
+          <div v-else-if="hasActiveRevote" class="locked-banner locked-banner--revote">
+            <div class="locked-banner__icon locked-banner__icon--revote">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <rect x="3" y="6.5" width="8" height="5" rx="1" stroke="#fff" stroke-width="1.4"/>
+                <path d="M4.5 6.5V5a2.5 2.5 0 1 1 5 0v1.5" stroke="#fff" stroke-width="1.4"/>
+              </svg>
+            </div>
+            <div class="locked-banner__text">
+              <div class="locked-banner__title">재투표가 진행 중이에요. 날짜 선택이 잠겼어요.</div>
+              <div class="locked-banner__sub">재투표 결과로 날짜가 확정되면 다시 확인할 수 있어요.</div>
+            </div>
+          </div>
+
           <!-- Normal heading (OPEN) -->
           <div v-else class="tab-heading">
             <div>
@@ -347,7 +391,7 @@ function copyLink() {
             <div class="selected-count">{{ selectedDates.size }}일 선택됨</div>
           </div>
 
-          <div v-if="startDate && endDate" :class="['cal-card', isConfirmed && 'cal-card--locked']">
+          <div v-if="startDate && endDate" :class="['cal-card', (isConfirmed || hasActiveRevote) && 'cal-card--locked']">
             <div class="cal-card__header">
               <button class="cal-card__nav-btn" :disabled="!canPrev" @click="prevMonth">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -399,17 +443,17 @@ function copyLink() {
           </div>
 
           <div class="save-bar">
-            <button class="clear-btn" :disabled="isConfirmed" @click="clearAll">모두 해제</button>
+            <button class="clear-btn" :disabled="isConfirmed || hasActiveRevote" @click="clearAll">모두 해제</button>
             <button
-              :disabled="selectedDates.size === 0 || isSaving || justSaved || isConfirmed"
+              :disabled="selectedDates.size === 0 || isSaving || justSaved || isConfirmed || hasActiveRevote"
               :class="[
                 'save-btn',
                 justSaved && 'save-btn--saved',
-                (selectedDates.size === 0 || isSaving || isConfirmed) && !justSaved && 'save-btn--disabled',
+                (selectedDates.size === 0 || isSaving || isConfirmed || hasActiveRevote) && !justSaved && 'save-btn--disabled',
               ]"
               @click="saveDates"
             >
-              <template v-if="isConfirmed">
+              <template v-if="isConfirmed || hasActiveRevote">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
                   <rect x="3.5" y="6.5" width="7" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/>
                   <path d="M5 6.5V5a2 2 0 1 1 4 0v1.5" stroke="currentColor" stroke-width="1.3"/>
@@ -532,8 +576,41 @@ function copyLink() {
             </div>
           </div>
 
-          <!-- OPEN: Host CTA -->
-          <div v-if="!isConfirmed && isHost && meeting.status === 'OPEN'" class="host-cta">
+          <!-- 동률 배너 (방장 전용, 재투표 없을 때) -->
+          <div v-else-if="!isConfirmed && isHost && hasTie" class="tie-banner">
+            <div class="tie-banner__icon">
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                <path d="M11 4v15M3 4h16" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M3 12l3-7 3 7" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M13 12l3-7 3 7" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="tie-banner__body">
+              <div class="tie-banner__chip">
+                <svg width="9" height="9" viewBox="0 0 9 9" fill="none"><circle cx="4.5" cy="4.5" r="3" stroke="#fff" stroke-width="1.2"/><path d="M4.5 2.5v2l1.3 1" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/></svg>
+                방장에게만 보임
+              </div>
+              <div class="tie-banner__title">
+                최다 득표 날짜가 <span class="tie-banner__count">{{ tiedDateList.length }}개</span>로 동률이에요
+              </div>
+              <div class="tie-banner__sub">
+                <b>{{ tiedDateList.map(d => `${d.getMonth()+1}/${d.getDate()}(${DAYS[d.getDay()]})`).join(' · ') }}</b>
+                &nbsp;중에서 직접 결정하거나, 후보를 좁혀 재투표를 열 수 있어요.
+              </div>
+            </div>
+            <div class="tie-banner__actions">
+              <button class="tie-banner__decide" @click="router.push(`/meetings/${meetingId}/confirm`)">직접 결정</button>
+              <button class="tie-banner__revote" @click="router.push(`/meetings/${meetingId}/revote/new`)">
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                  <path d="M2 6.5h9M7.5 3l3.5 3.5L7.5 10" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                재투표 열기
+              </button>
+            </div>
+          </div>
+
+          <!-- OPEN: Host CTA (동률 없고 재투표 없을 때) -->
+          <div v-else-if="!isConfirmed && isHost && meeting.status === 'OPEN'" class="host-cta">
             <div class="host-cta__icon">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                 <path d="M3 8l3.5 3.5L13 5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -908,6 +985,11 @@ function copyLink() {
   justify-content: center;
   flex-shrink: 0;
 }
+.locked-banner--revote {
+  background: rgba(83,74,183,0.04);
+  border-color: rgba(83,74,183,0.18);
+}
+.locked-banner__icon--revote { background: var(--color-primary); }
 .locked-banner__text { flex: 1; min-width: 0; }
 .locked-banner__title {
   font-size: 14px;
@@ -1237,6 +1319,178 @@ function copyLink() {
   box-shadow: 0 2px 6px rgba(15,110,86,0.25);
 }
 
+/* Revote active banner */
+.revote-active-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, rgba(83,74,183,0.08), rgba(83,74,183,0.04));
+  border: 1.5px solid rgba(83,74,183,0.25);
+  border-radius: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.revote-active-banner__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+@keyframes mannaPulse { 0%,100% { transform: scale(1) } 50% { transform: scale(1.25) } }
+.revote-active-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #fff;
+  animation: mannaPulse 1.4s ease-in-out infinite;
+  display: block;
+}
+.revote-active-banner__body { flex: 1; min-width: 0; }
+.revote-active-banner__chip {
+  display: inline-flex;
+  padding: 3px 8px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+.revote-active-banner__title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  letter-spacing: -0.01em;
+}
+.revote-active-banner__btns {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.revote-active-banner__btn {
+  padding: 10px 16px;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 2px 8px rgba(83,74,183,0.25);
+  transition: background 0.12s;
+  white-space: nowrap;
+}
+.revote-active-banner__btn:hover { background: var(--color-primary-dark); }
+.revote-active-banner__btn--ghost {
+  background: #fff;
+  color: var(--color-primary);
+  border: 1.5px solid rgba(83,74,183,0.35);
+  box-shadow: none;
+}
+.revote-active-banner__btn--ghost:hover { background: rgba(83,74,183,0.06); }
+
+/* Tie banner */
+.tie-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px 18px;
+  background: linear-gradient(135deg, rgba(83,74,183,0.06), rgba(83,74,183,0.10));
+  border: 1.5px solid rgba(83,74,183,0.25);
+  border-radius: 14px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+.tie-banner__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  background: var(--color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(83,74,183,0.30);
+  animation: mannaPulse 2.4s ease-in-out infinite;
+}
+.tie-banner__body { flex: 1; min-width: 200px; }
+.tie-banner__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 700;
+  border-radius: 999px;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+.tie-banner__title {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+  line-height: 1.35;
+}
+.tie-banner__count { color: var(--color-primary); }
+.tie-banner__sub {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+.tie-banner__sub b { color: var(--color-text-primary); font-weight: 600; }
+.tie-banner__actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  align-items: center;
+}
+.tie-banner__decide {
+  padding: 11px 16px;
+  background: #fff;
+  color: var(--color-text-primary);
+  border: 1.5px solid var(--color-border);
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  transition: background 0.12s;
+}
+.tie-banner__decide:hover { background: #f4f4f6; }
+.tie-banner__revote {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 18px;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: -0.01em;
+  box-shadow: 0 2px 8px rgba(83,74,183,0.25);
+  white-space: nowrap;
+  transition: background 0.12s;
+}
+.tie-banner__revote:hover { background: var(--color-primary-dark); }
+
 /* Host CTA (OPEN) */
 .host-cta {
   display: flex;
@@ -1498,6 +1752,12 @@ function copyLink() {
   .heat-cell__star { display: none; }
   .heat-cell__confirmed-badge { width: 16px; height: 16px; top: -5px; right: -5px; }
   .heat-cell__confirmed-badge svg { width: 8px; height: 8px; }
+  .revote-active-banner { flex-direction: column; }
+  .revote-active-banner__btns { width: 100%; }
+  .revote-active-banner__btn { flex: 1; text-align: center; }
+  .tie-banner { flex-direction: column; }
+  .tie-banner__actions { width: 100%; }
+  .tie-banner__decide, .tie-banner__revote { flex: 1; justify-content: center; }
   .host-cta { flex-direction: column; align-items: flex-start; }
   .host-cta__btn { width: 100%; text-align: center; }
   .host-confirmed-actions { flex-direction: column; align-items: flex-start; }
