@@ -20,6 +20,7 @@ export interface Meeting {
   isParticipant?: boolean
   participants: Participant[]
   createdAt: string
+  hasRevote: boolean
 }
 
 export interface CreateMeetingRequest {

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/vue-query'
 import { useRouter } from 'vue-router'
+import type { Ref } from 'vue'
 import { meetingApi } from '../api/meeting'
 import type {
   CreateMeetingRequest,
@@ -87,7 +88,11 @@ export function useConfirmDate(meetingId: number) {
   })
 }
 
-export function useRevote(meetingId: number, refetchInterval: number | false = false) {
+export function useRevote(
+  meetingId: number,
+  refetchInterval: number | false = false,
+  enabled: Ref<boolean> | boolean = true,
+) {
   return useQuery({
     queryKey: ['meetings', meetingId, 'revote'],
     queryFn: async () => {
@@ -101,6 +106,7 @@ export function useRevote(meetingId: number, refetchInterval: number | false = f
     },
     retry: false,
     refetchInterval,
+    enabled,
   })
 }
 

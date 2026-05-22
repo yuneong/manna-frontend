@@ -21,7 +21,7 @@ const toast = ref<string | null>(null)
 
 const { data: meeting, isLoading } = useMeeting(meetingId)
 const { data: heatmapData } = useHeatmap(meetingId)
-const { data: revoteData } = useRevote(meetingId)
+const { data: revoteData } = useRevote(meetingId, false, computed(() => !!meeting.value?.hasRevote))
 const { mutate: saveSchedules, isPending: isSaving } = useSaveSchedules(meetingId)
 const { mutate: joinMeeting } = useJoinMeeting()
 const { mutate: cancelConfirm, isPending: isCancelling } = useCancelConfirm(meetingId)
