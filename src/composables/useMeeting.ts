@@ -4,6 +4,7 @@ import type { Ref } from 'vue'
 import { meetingApi } from '../api/meeting'
 import type {
   CreateMeetingRequest,
+  UpdateMeetingRequest,
   SchedulesRequest,
   ConfirmDateRequest,
   CreateRevoteRequest,
@@ -61,6 +62,32 @@ export function useSaveSchedules(meetingId: number) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meetings', meetingId, 'heatmap'] })
       queryClient.invalidateQueries({ queryKey: ['meetings', meetingId] })
+    },
+  })
+}
+
+export function useUpdateMeeting(meetingId: number) {
+  const router = useRouter()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: UpdateMeetingRequest) =>
+      meetingApi.update(meetingId, data).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['meetings', meetingId] })
+      queryClient.invalidateQueries({ queryKey: ['meetings', 'my'] })
+      router.push(`/meetings/${meetingId}`)
+    },
+  })
+}
+
+export function useDeleteMeeting(meetingId: number) {
+  const router = useRouter()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => meetingApi.deleteMeeting(meetingId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['meetings', 'my'] })
+      router.push('/')
     },
   })
 }

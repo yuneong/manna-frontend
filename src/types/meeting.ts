@@ -30,6 +30,13 @@ export interface CreateMeetingRequest {
   dateRangeEnd: string
 }
 
+export interface UpdateMeetingRequest {
+  title: string
+  description?: string
+  dateRangeStart: string
+  dateRangeEnd: string
+}
+
 export interface SchedulesRequest {
   scheduledDates: string[]
 }

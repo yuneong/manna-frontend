@@ -2,11 +2,12 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import dayjs from 'dayjs'
-import { useMeeting, useHeatmap, useSaveSchedules, useJoinMeeting, useCancelConfirm, useRevote } from '../composables/useMeeting'
+import { useMeeting, useHeatmap, useSaveSchedules, useJoinMeeting, useCancelConfirm, useRevote, useDeleteMeeting } from '../composables/useMeeting'
 import { meetingApi } from '../api/meeting'
 import { useAuthStore } from '../stores/auth'
 import AppBadge from '../components/common/AppBadge.vue'
 import AvatarStack from '../components/common/AvatarStack.vue'
+import KebabMenu from '../components/common/KebabMenu.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,6 +18,7 @@ const tab = ref<'mine' | 'heat'>('mine')
 const selectedDates = ref<Set<string>>(new Set())
 const copied = ref(false)
 const showCancelModal = ref(false)
+const showDeleteModal = ref(false)
 const toast = ref<string | null>(null)
 
 const { data: meeting, isLoading } = useMeeting(meetingId)
@@ -25,6 +27,7 @@ const { data: revoteData } = useRevote(meetingId, false, computed(() => !!meetin
 const { mutate: saveSchedules, isPending: isSaving } = useSaveSchedules(meetingId)
 const { mutate: joinMeeting } = useJoinMeeting()
 const { mutate: cancelConfirm, isPending: isCancelling } = useCancelConfirm(meetingId)
+const { mutate: deleteMeeting, isPending: isDeleting } = useDeleteMeeting(meetingId)
 
 const isHost = computed(() => meeting.value?.hostId === authStore.user?.id)
 const isConfirmed = computed(() => meeting.value?.status === 'CONFIRMED')
@@ -192,8 +195,22 @@ function showToastMsg(msg: string) {
   setTimeout(() => { toast.value = null }, 3000)
 }
 
+function doDelete() {
+  deleteMeeting(undefined, {
+    onError: (e: any) => {
+      showDeleteModal.value = false
+      const status = e.response?.status
+      if (status === 403) showToastMsg('권한이 없어요')
+      else showToastMsg('삭제 중 오류가 발생했습니다.')
+    },
+  })
+}
+
 function onKeyDown(e: KeyboardEvent) {
-  if (e.key === 'Escape' && showCancelModal.value) showCancelModal.value = false
+  if (e.key === 'Escape') {
+    if (showCancelModal.value) showCancelModal.value = false
+    if (showDeleteModal.value) showDeleteModal.value = false
+  }
 }
 onMounted(() => document.addEventListener('keydown', onKeyDown))
 onUnmounted(() => document.removeEventListener('keydown', onKeyDown))
@@ -232,6 +249,12 @@ function copyLink() {
                   </svg>
                   확정
                 </span>
+                <KebabMenu
+                  v-if="isHost"
+                  :can-edit="false"
+                  @edit="router.push(`/meetings/${meetingId}/edit`)"
+                  @delete="showDeleteModal = true"
+                />
               </div>
               <div class="confirmed-date-strip">
                 <div class="confirmed-date-strip__cal">
@@ -267,6 +290,12 @@ function copyLink() {
             <div class="mcard__top">
               <h1 class="mcard__title">{{ meeting.title }}</h1>
               <AppBadge :status="meeting.status" />
+              <KebabMenu
+                v-if="isHost"
+                :can-edit="!isConfirmed"
+                @edit="router.push(`/meetings/${meetingId}/edit`)"
+                @delete="showDeleteModal = true"
+              />
             </div>
             <div class="mcard__meta">
               <div class="mcard__meta-row">
@@ -639,7 +668,7 @@ function copyLink() {
             </div>
             <div class="host-confirmed-actions__btns">
               <button class="cancel-confirm-btn" @click="showCancelModal = true">확정 취소</button>
-              <button class="edit-confirm-btn" @click="router.push(`/meetings/${meetingId}/confirm`)">확정 수정</button>
+              <button class="edit-confirm-btn" @click="router.push(`/meetings/${meetingId}/edit`)">확정 수정</button>
             </div>
           </div>
         </template>
@@ -668,6 +697,28 @@ function copyLink() {
           <button class="modal-btn modal-btn--danger" :disabled="isCancelling" @click="doCancelConfirm">
             <span v-if="isCancelling" class="save-btn__spinner" />
             {{ isCancelling ? '취소 중...' : '취소하기' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
+  <!-- Delete confirm modal -->
+  <Teleport to="body">
+    <div v-if="showDeleteModal" class="modal-overlay" @click.self="showDeleteModal = false">
+      <div class="modal-box">
+        <div class="modal-box__icon-wrap">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+            <path d="M4 6h14M8 6V4.5h6V6M8.5 9v7M13.5 9v7M5 6l1 12.5a1.5 1.5 0 0 0 1.5 1.5h9a1.5 1.5 0 0 0 1.5-1.5L19 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h2 class="modal-box__title">약속을 삭제하시겠어요?</h2>
+        <p class="modal-box__desc">삭제한 약속은 복구할 수 없어요. 참여자들도 더 이상 이 약속방에 접근할 수 없게 돼요.</p>
+        <div class="modal-box__actions">
+          <button class="modal-btn modal-btn--ghost" @click="showDeleteModal = false">돌아가기</button>
+          <button class="modal-btn modal-btn--danger" :disabled="isDeleting" @click="doDelete">
+            <span v-if="isDeleting" class="save-btn__spinner" />
+            {{ isDeleting ? '삭제 중...' : '삭제하기' }}
           </button>
         </div>
       </div>

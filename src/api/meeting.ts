@@ -2,6 +2,7 @@ import client from './client'
 import type {
   Meeting,
   CreateMeetingRequest,
+  UpdateMeetingRequest,
   SchedulesRequest,
   HeatmapResponse,
   MySchedulesResponse,
@@ -24,6 +25,8 @@ export const meetingApi = {
     client.get<MySchedulesResponse>(`/api/v1/meetings/${id}/schedules/me`),
   confirm: (id: number, data: ConfirmDateRequest) =>
     client.post<Meeting>(`/api/v1/meetings/${id}/confirm`, data),
+  update: (id: number, data: UpdateMeetingRequest) => client.put<Meeting>(`/api/v1/meetings/${id}`, data),
+  deleteMeeting: (id: number) => client.delete(`/api/v1/meetings/${id}`),
   cancelConfirm: (id: number) => client.delete(`/api/v1/meetings/${id}/confirm`),
   getRevote: (id: number) => client.get<RevoteResponse>(`/api/v1/meetings/${id}/revote`),
   createRevote: (id: number, data: CreateRevoteRequest) =>

@@ -4,6 +4,7 @@ import SignUpView from '../views/SignUpView.vue'
 import HomeView from '../views/HomeView.vue'
 import MeetingCreateView from '../views/MeetingCreateView.vue'
 import MeetingDetailView from '../views/MeetingDetailView.vue'
+import EditMeetingView from '../views/EditMeetingView.vue'
 import MeetingConfirmView from '../views/MeetingConfirmView.vue'
 import RevoteCreateView from '../views/RevoteCreateView.vue'
 import RevoteView from '../views/RevoteView.vue'
@@ -16,6 +17,7 @@ const router = createRouter({
     { path: '/', name: 'home', component: HomeView },
     { path: '/meetings/new', name: 'meeting-create', component: MeetingCreateView },
     { path: '/meetings/:id', name: 'meeting-detail', component: MeetingDetailView },
+    { path: '/meetings/:id/edit', name: 'meeting-edit', component: EditMeetingView },
     { path: '/meetings/:id/confirm', name: 'meeting-confirm', component: MeetingConfirmView },
     { path: '/meetings/:id/revote/new', name: 'revote-create', component: RevoteCreateView },
     { path: '/meetings/:id/revote', name: 'revote', component: RevoteView },
