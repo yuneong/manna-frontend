@@ -9,13 +9,15 @@ import AppBadge from '../components/common/AppBadge.vue'
 import AvatarStack from '../components/common/AvatarStack.vue'
 import KebabMenu from '../components/common/KebabMenu.vue'
 import PlaceTab from '../components/meeting/PlaceTab.vue'
+import PhaseTabs from '../components/meeting/PhaseTabs.vue'
 
 const route = useRoute()
 const router = useRouter()
 const meetingId = Number(route.params.id)
 const authStore = useAuthStore()
 
-const tab = ref<'mine' | 'heat' | 'place'>('mine')
+const l1 = ref<'schedule' | 'place' | 'settle'>('schedule')
+const l2 = ref<'mine' | 'heat'>('heat')
 const selectedDates = ref<Set<string>>(new Set())
 const copied = ref(false)
 const showCancelModal = ref(false)
@@ -31,7 +33,7 @@ const { mutate: cancelConfirm, isPending: isCancelling } = useCancelConfirm(meet
 const { mutate: deleteMeeting, isPending: isDeleting } = useDeleteMeeting(meetingId)
 
 const isHost = computed(() => meeting.value?.hostId === authStore.user?.id)
-const isConfirmed = computed(() => meeting.value?.status === 'CONFIRMED')
+const isConfirmed = computed(() => !!meeting.value && meeting.value.status !== 'OPEN')
 const hasActiveRevote = computed(() => revoteData.value?.status === 'OPEN')
 
 watch(meeting, (m) => {
@@ -263,7 +265,7 @@ function copyLink() {
                   <div class="confirmed-date-strip__cal-d">{{ confirmedDate.getDate() }}</div>
                 </div>
                 <div class="confirmed-date-strip__info">
-                  <div class="confirmed-date-strip__label">확정된 날짜</div>
+                  <div class="confirmed-date-strip__label">확정된 일정</div>
                   <div class="confirmed-date-strip__title">
                     {{ confirmedDate.getMonth()+1 }}월 {{ confirmedDate.getDate() }}일 ({{ DAYS[confirmedDate.getDay()] }}) 확정
                   </div>
@@ -361,29 +363,16 @@ function copyLink() {
         </div>
 
         <!-- Tabs -->
-        <div class="tabs">
-          <button :class="['tab', tab === 'mine' && 'tab--active']" @click="tab = 'mine'">
-            내 날짜 선택
-            <span v-if="isConfirmed" :class="['tab__lock', tab === 'mine' && 'tab__lock--active']">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                <rect x="2.5" y="5.5" width="7" height="5" rx="1" stroke="currentColor" stroke-width="1.2"/>
-                <path d="M4 5.5V4a2 2 0 1 1 4 0v1.5" stroke="currentColor" stroke-width="1.2"/>
-              </svg>
-            </span>
-            <span v-else-if="selectedDates.size > 0" :class="['tab__badge', tab === 'mine' && 'tab__badge--active']">
-              {{ selectedDates.size }}
-            </span>
-          </button>
-          <button :class="['tab', tab === 'heat' && 'tab--active']" @click="tab = 'heat'">
-            전체 현황
-          </button>
-          <button v-if="isConfirmed" :class="['tab', tab === 'place' && 'tab--active']" @click="tab = 'place'">
-            장소
-          </button>
+        <div class="tabs-wrap">
+          <PhaseTabs
+            :status="meeting.status"
+            v-model:l1="l1"
+            v-model:l2="l2"
+          />
         </div>
 
-        <!-- Mine tab -->
-        <template v-if="tab === 'mine'">
+        <!-- Mine subtab -->
+        <template v-if="l1 === 'schedule' && l2 === 'mine'">
           <!-- Locked banner (CONFIRMED) -->
           <div v-if="isConfirmed && confirmedDate" class="locked-banner">
             <div class="locked-banner__icon">
@@ -514,7 +503,7 @@ function copyLink() {
         </template>
 
         <!-- Place tab -->
-        <template v-else-if="tab === 'place'">
+        <template v-else-if="l1 === 'place'">
           <PlaceTab
             :meeting-id="meetingId"
             :total-participants="totalParticipants"
@@ -522,8 +511,13 @@ function copyLink() {
           />
         </template>
 
-        <!-- Heatmap tab -->
-        <template v-else>
+        <!-- Settle tab (placeholder) -->
+        <template v-else-if="l1 === 'settle'">
+          <div class="settle-placeholder">정산 기능은 준비 중이에요</div>
+        </template>
+
+        <!-- Heatmap subtab -->
+        <template v-else-if="l1 === 'schedule' && l2 === 'heat'">
           <div class="tab-heading">
             <div>
               <div class="tab-heading__title">
@@ -947,6 +941,9 @@ function copyLink() {
 }
 
 /* Tabs */
+.tabs-wrap {
+  margin-bottom: 22px;
+}
 .tabs {
   display: flex;
   border-bottom: 1px solid var(--color-border);
@@ -1787,6 +1784,13 @@ function copyLink() {
   z-index: 1100;
   white-space: nowrap;
   animation: fadeIn 0.15s ease-out;
+}
+
+.settle-placeholder {
+  text-align: center;
+  padding: 60px 0;
+  font-size: 14px;
+  color: var(--color-text-secondary);
 }
 
 @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }

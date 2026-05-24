@@ -1,4 +1,4 @@
-export type MeetingStatus = 'OPEN' | 'CONFIRMED' | 'CANCELLED'
+export type MeetingStatus = 'OPEN' | 'CONFIRMED' | 'PLACE_VOTING' | 'SETTLING' | 'CANCELLED'
 
 export interface Participant {
   id: number
