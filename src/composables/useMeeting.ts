@@ -10,6 +10,8 @@ import type {
   CreateRevoteRequest,
   VoteRevoteRequest,
   ConfirmRevoteRequest,
+  PlacesResponse,
+  PlaceSuggestRequest,
 } from '../types/meeting'
 
 export function useMyMeetings() {
@@ -171,6 +173,52 @@ export function useConfirmRevote(meetingId: number) {
       queryClient.invalidateQueries({ queryKey: ['meetings', meetingId] })
       queryClient.invalidateQueries({ queryKey: ['meetings', meetingId, 'revote'] })
       router.push(`/meetings/${meetingId}`)
+    },
+  })
+}
+
+export function usePlaces(meetingId: number) {
+  return useQuery({
+    queryKey: ['meetings', meetingId, 'places'],
+    queryFn: () => meetingApi.getPlaces(meetingId).then((r) => r.data),
+    retry: false,
+  })
+}
+
+export function useSuggestPlace(meetingId: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: PlaceSuggestRequest) =>
+      meetingApi.suggestPlace(meetingId, data).then((r) => r.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['meetings', meetingId, 'places'] })
+    },
+  })
+}
+
+export function useVotePlace(meetingId: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (placeId: number) => meetingApi.votePlace(meetingId, placeId),
+    onMutate: async (placeId: number) => {
+      await queryClient.cancelQueries({ queryKey: ['meetings', meetingId, 'places'] })
+      const prev = queryClient.getQueryData<PlacesResponse>(['meetings', meetingId, 'places'])
+      queryClient.setQueryData<PlacesResponse>(['meetings', meetingId, 'places'], (old) => {
+        if (!old) return old
+        return {
+          ...old,
+          places: old.places.map((p) =>
+            p.id === placeId ? { ...p, myVoted: !p.myVoted } : p,
+          ),
+        }
+      })
+      return { prev }
+    },
+    onError: (_err, _placeId, ctx) => {
+      if (ctx?.prev) queryClient.setQueryData(['meetings', meetingId, 'places'], ctx.prev)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['meetings', meetingId, 'places'] })
     },
   })
 }

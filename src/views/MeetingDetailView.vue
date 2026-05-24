@@ -8,13 +8,14 @@ import { useAuthStore } from '../stores/auth'
 import AppBadge from '../components/common/AppBadge.vue'
 import AvatarStack from '../components/common/AvatarStack.vue'
 import KebabMenu from '../components/common/KebabMenu.vue'
+import PlaceTab from '../components/meeting/PlaceTab.vue'
 
 const route = useRoute()
 const router = useRouter()
 const meetingId = Number(route.params.id)
 const authStore = useAuthStore()
 
-const tab = ref<'mine' | 'heat'>('mine')
+const tab = ref<'mine' | 'heat' | 'place'>('mine')
 const selectedDates = ref<Set<string>>(new Set())
 const copied = ref(false)
 const showCancelModal = ref(false)
@@ -376,6 +377,9 @@ function copyLink() {
           <button :class="['tab', tab === 'heat' && 'tab--active']" @click="tab = 'heat'">
             전체 현황
           </button>
+          <button v-if="isConfirmed" :class="['tab', tab === 'place' && 'tab--active']" @click="tab = 'place'">
+            장소
+          </button>
         </div>
 
         <!-- Mine tab -->
@@ -507,6 +511,15 @@ function copyLink() {
               </template>
             </button>
           </div>
+        </template>
+
+        <!-- Place tab -->
+        <template v-else-if="tab === 'place'">
+          <PlaceTab
+            :meeting-id="meetingId"
+            :total-participants="totalParticipants"
+            @toast="showToastMsg"
+          />
         </template>
 
         <!-- Heatmap tab -->

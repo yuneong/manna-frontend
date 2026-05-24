@@ -11,6 +11,8 @@ import type {
   CreateRevoteRequest,
   VoteRevoteRequest,
   ConfirmRevoteRequest,
+  PlacesResponse,
+  PlaceSuggestRequest,
 } from '../types/meeting'
 
 export const meetingApi = {
@@ -35,4 +37,9 @@ export const meetingApi = {
     client.post<RevoteResponse>(`/api/v1/meetings/${id}/revote/vote`, data),
   confirmRevote: (id: number, data: ConfirmRevoteRequest) =>
     client.post<Meeting>(`/api/v1/meetings/${id}/revote/confirm`, data),
+  getPlaces: (id: number) => client.get<PlacesResponse>(`/api/v1/meetings/${id}/places`),
+  suggestPlace: (id: number, data: PlaceSuggestRequest) =>
+    client.post<Place>(`/api/v1/meetings/${id}/places`, data),
+  votePlace: (id: number, placeId: number) =>
+    client.post(`/api/v1/meetings/${id}/places/${placeId}/vote`),
 }

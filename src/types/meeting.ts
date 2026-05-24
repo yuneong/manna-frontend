@@ -87,3 +87,35 @@ export interface VoteRevoteRequest {
 export interface ConfirmRevoteRequest {
   confirmedDate: string
 }
+
+export interface PlaceProposer {
+  id: number
+  nickname: string
+}
+
+export interface PlaceVoter {
+  id: number
+  nickname: string
+}
+
+export interface Place {
+  id: number
+  name: string
+  url?: string | null
+  memo?: string | null
+  voteCount: number
+  myVoted: boolean
+  proposer: PlaceProposer
+  voters: PlaceVoter[]
+}
+
+export interface PlacesResponse {
+  places: Place[]
+  totalParticipants: number
+}
+
+export interface PlaceSuggestRequest {
+  name: string
+  url?: string
+  memo?: string
+}
