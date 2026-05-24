@@ -17,7 +17,7 @@ const meetingId = Number(route.params.id)
 const authStore = useAuthStore()
 
 const l1 = ref<'schedule' | 'place' | 'settle'>('schedule')
-const l2 = ref<'mine' | 'heat'>('heat')
+const l2 = ref<'mine' | 'heat'>('mine')
 const selectedDates = ref<Set<string>>(new Set())
 const copied = ref(false)
 const showCancelModal = ref(false)
@@ -40,6 +40,18 @@ watch(meeting, (m) => {
   if (!m || !authStore.user) return
   if (m.isParticipant === false) joinMeeting(meetingId)
 }, { immediate: true })
+
+let l1Initialized = false
+watch(
+  () => meeting.value?.status,
+  (status) => {
+    if (!status || l1Initialized) return
+    l1Initialized = true
+    if (status === 'CONFIRMED' || status === 'PLACE_VOTING') l1.value = 'place'
+    else if (status === 'SETTLING') l1.value = 'settle'
+  },
+  { immediate: true },
+)
 
 const heatmap = computed(() => {
   const raw = heatmapData.value?.heatmap ?? {}
@@ -246,12 +258,7 @@ function copyLink() {
             <div class="mcard__confirmed-top">
               <div class="mcard__top">
                 <h1 class="mcard__title">{{ meeting.title }}</h1>
-                <span class="confirmed-badge">
-                  <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
-                    <path d="M2.5 6l2 2 4-4.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  확정
-                </span>
+                <AppBadge :status="meeting.status" />
                 <KebabMenu
                   v-if="isHost"
                   :can-edit="false"
