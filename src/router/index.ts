@@ -8,6 +8,7 @@ import EditMeetingView from '../views/EditMeetingView.vue'
 import MeetingConfirmView from '../views/MeetingConfirmView.vue'
 import RevoteCreateView from '../views/RevoteCreateView.vue'
 import RevoteView from '../views/RevoteView.vue'
+import OAuthCallbackView from '../views/OAuthCallbackView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -21,6 +22,7 @@ const router = createRouter({
     { path: '/meetings/:id/confirm', name: 'meeting-confirm', component: MeetingConfirmView },
     { path: '/meetings/:id/revote/new', name: 'revote-create', component: RevoteCreateView },
     { path: '/meetings/:id/revote', name: 'revote', component: RevoteView },
+    { path: '/oauth/callback', name: 'oauth-callback', component: OAuthCallbackView, meta: { public: true } },
   ],
 })
 

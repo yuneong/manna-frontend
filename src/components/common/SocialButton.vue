@@ -1,9 +1,15 @@
 <script setup lang="ts">
-defineProps<{ provider: 'kakao' | 'google' }>()
+const props = defineProps<{ provider: 'kakao' | 'google' }>()
+
+const BASE = import.meta.env.VITE_API_BASE_URL ?? ''
+
+function login() {
+  window.location.href = `${BASE}/api/v1/auth/${props.provider}`
+}
 </script>
 
 <template>
-  <button :class="['social-btn', `social-btn--${provider}`]" type="button">
+  <button :class="['social-btn', `social-btn--${provider}`]" type="button" @click="login">
     <svg
       v-if="provider === 'kakao'"
       width="18"
