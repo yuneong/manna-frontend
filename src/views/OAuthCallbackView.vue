@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
+import { useAuth } from '../composables/useAuth'
 
 const router = useRouter()
+const authStore = useAuthStore()
+const { fetchMe } = useAuth()
 
-onMounted(() => {
+onMounted(async () => {
   const params = new URLSearchParams(window.location.search)
   const token = params.get('token')
   if (token) {
-    localStorage.setItem('accessToken', token)
+    authStore.setToken(token)
+    await fetchMe()
     router.replace('/')
   } else {
     router.replace({ name: 'login', query: { error: 'social' } })

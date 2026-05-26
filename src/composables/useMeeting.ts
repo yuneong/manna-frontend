@@ -14,10 +14,11 @@ import type {
   PlaceSuggestRequest,
 } from '../types/meeting'
 
-export function useMyMeetings() {
+export function useMyMeetings(enabled: Ref<boolean> | boolean = true) {
   return useQuery({
     queryKey: ['meetings', 'my'],
     queryFn: () => meetingApi.getMy().then((r) => r.data),
+    enabled,
   })
 }
 

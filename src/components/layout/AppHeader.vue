@@ -48,6 +48,24 @@ const initial = computed(() => authStore.user?.nickname?.[0]?.toUpperCase() ?? '
   align-items: center;
   gap: 12px;
 }
+.header__new-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 34px;
+  padding: 0 14px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.header__new-btn:hover { background: var(--color-primary-dark); }
 .header__avatar {
   width: 28px;
   height: 28px;

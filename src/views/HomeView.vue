@@ -15,7 +15,7 @@ const { data: meetings, isLoading, isError } = useMyMeetings()
           <h2 class="home__title">내 약속</h2>
           <p class="home__subtitle">친구들과 일정을 조율해보세요</p>
         </div>
-        <button class="home__new-btn" @click="router.push('/meetings/new')">
+        <button v-if="meetings?.length" class="home__new-btn" @click="router.push('/meetings/new')">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
             <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
           </svg>
