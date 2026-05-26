@@ -74,7 +74,7 @@ async function onSubmit() {
     <div class="auth-center">
       <div class="auth-card">
         <div class="auth-heading">
-          <AppLogo :size="38" />
+          <AppLogo :size="38" text-only />
           <h1>다시 만나서 반가워요</h1>
           <p>친구들과 약속을 더 쉽게</p>
         </div>

@@ -1,23 +1,38 @@
 <script setup lang="ts">
-withDefaults(defineProps<{ size?: number }>(), { size: 36 })
+import logoImg from '../../assets/manna-header-48.png'
+
+withDefaults(defineProps<{ size?: number; textOnly?: boolean }>(), { size: 36, textOnly: false })
 </script>
 
 <template>
-  <span class="logo" :style="{ fontSize: `${size}px` }">
-    manna
-    <span
-      class="logo__dot"
-      :style="{
-        width: `${size * 0.18}px`,
-        height: `${size * 0.18}px`,
-        transform: `translateY(-${size * 0.04}px)`,
-      }"
-    />
+  <span class="logo">
+    <img v-if="!textOnly" :src="logoImg" :height="size" :width="size" alt="" class="logo__img" aria-hidden="true" />
+    <span class="logo__text" :style="{ fontSize: `${size}px` }">
+      manna
+      <span
+        class="logo__dot"
+        :style="{
+          width: `${size * 0.18}px`,
+          height: `${size * 0.18}px`,
+          transform: `translateY(-${size * 0.04}px)`,
+        }"
+      />
+    </span>
   </span>
 </template>
 
 <style scoped>
 .logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.logo__img {
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.logo__text {
   font-family: 'Inter', 'Pretendard', -apple-system, system-ui, sans-serif;
   font-weight: 800;
   letter-spacing: -0.04em;
