@@ -231,7 +231,17 @@ onMounted(() => document.addEventListener('keydown', onKeyDown))
 onUnmounted(() => document.removeEventListener('keydown', onKeyDown))
 
 function copyLink() {
-  navigator.clipboard.writeText(window.location.href).catch(() => {})
+  const url = window.location.href
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).catch(() => {})
+  } else {
+    const el = document.createElement('textarea')
+    el.value = url
+    document.body.appendChild(el)
+    el.select()
+    document.execCommand('copy')
+    document.body.removeChild(el)
+  }
   copied.value = true
   setTimeout(() => { copied.value = false }, 1600)
 }
