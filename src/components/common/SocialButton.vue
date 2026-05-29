@@ -4,7 +4,7 @@ const props = defineProps<{ provider: 'kakao' | 'google' }>()
 const BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 
 function login() {
-  window.location.href = `${BASE}/api/v1/auth/${props.provider}`
+  window.location.href = `${BASE}/v1/auth/${props.provider}`
 }
 </script>
 
