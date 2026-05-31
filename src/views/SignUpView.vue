@@ -139,7 +139,7 @@ async function onSubmit() {
 
           <div class="auth-social">
             <SocialButton provider="kakao" />
-            <SocialButton provider="google" />
+<!--            <SocialButton provider="google" />-->
           </div>
 
           <p class="auth-switch">
