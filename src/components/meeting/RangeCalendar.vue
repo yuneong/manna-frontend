@@ -99,13 +99,13 @@ const helperText = computed(() => {
 <template>
   <div :class="['cal', error && 'cal--error']">
     <div class="cal__header">
-      <button class="cal__nav-btn" aria-label="이전 달" @click="prevMonth">
+      <button type="button" class="cal__nav-btn" aria-label="이전 달" @click="prevMonth">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M8.5 3l-4 4 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </button>
       <span class="cal__month-label">{{ headerText }}</span>
-      <button class="cal__nav-btn" aria-label="다음 달" @click="nextMonth">
+      <button type="button" class="cal__nav-btn" aria-label="다음 달" @click="nextMonth">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M5.5 3l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -124,6 +124,7 @@ const helperText = computed(() => {
       <button
         v-for="(d, i) in days"
         :key="i"
+        type="button"
         class="cal__cell"
         @click="click(d)"
         @mouseenter="hover = d"
@@ -145,6 +146,7 @@ const helperText = computed(() => {
       <span>{{ helperText }}</span>
       <button
         v-if="start || end"
+        type="button"
         class="cal__reset"
         @click="$emit('change', null, null)"
       >초기화</button>
