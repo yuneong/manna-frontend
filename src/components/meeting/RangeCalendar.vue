@@ -51,12 +51,20 @@ const previewEnd = computed<Date | null>(() => {
   return props.end
 })
 
+function isPast(d: Date): boolean {
+  return d < today
+}
+
 function inRange(d: Date): boolean {
   return !!(previewStart.value && previewEnd.value && d >= previewStart.value && d <= previewEnd.value)
 }
 
 function pillClasses(d: Date): string[] {
   const classes = ['cal__pill']
+  if (isPast(d)) {
+    classes.push('cal__pill--disabled')
+    return classes
+  }
   const sel = sameDay(d, previewStart.value) || sameDay(d, previewEnd.value)
   if (sel) {
     classes.push('cal__pill--selected')
@@ -79,6 +87,7 @@ function nextMonth() {
 }
 
 function click(d: Date) {
+  if (isPast(d)) return
   if (!props.start || (props.start && props.end)) {
     emit('change', startOfDay(d), null)
   } else {
@@ -126,8 +135,9 @@ const helperText = computed(() => {
         :key="i"
         type="button"
         class="cal__cell"
+        :disabled="isPast(d)"
         @click="click(d)"
-        @mouseenter="hover = d"
+        @mouseenter="!isPast(d) && (hover = d)"
         @mouseleave="hover = null"
       >
         <div
@@ -245,7 +255,11 @@ const helperText = computed(() => {
   color: var(--color-text-primary);
   transition: background 0.1s;
 }
-.cal__pill--other-month { color: #D5D5DC; }
+.cal__pill--disabled {
+  color: #D5D5DC;
+  cursor: not-allowed;
+}
+.cal__pill--other-month { opacity: 0.4; }
 .cal__pill--sun { color: #C8362B; }
 .cal__pill--sat { color: #3B70C9; }
 .cal__pill--today {
