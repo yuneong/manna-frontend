@@ -4,6 +4,8 @@ const props = defineProps<{ provider: 'kakao' | 'google' }>()
 const BASE = import.meta.env.VITE_API_BASE_URL ?? ''
 
 function login() {
+  const redirect = new URLSearchParams(window.location.search).get('redirect')
+  if (redirect) sessionStorage.setItem('redirectAfterLogin', redirect)
   window.location.href = `${BASE}/v1/auth/${props.provider}`
 }
 </script>
