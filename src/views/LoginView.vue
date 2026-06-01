@@ -71,7 +71,7 @@ async function onSubmit() {
   <div class="auth-page">
     <nav class="auth-nav">
       <AppLogo :size="22" />
-      <span class="auth-nav__help">도움말</span>
+<!--      <span class="auth-nav__help">도움말</span>-->
     </nav>
 
     <div class="auth-center">
@@ -123,7 +123,7 @@ async function onSubmit() {
               <input type="checkbox" v-model="rememberEmail" />
               <span>이메일 저장</span>
             </label>
-            <a href="#" class="auth-forgot__link">비밀번호 찾기</a>
+<!--            <a href="#" class="auth-forgot__link">비밀번호 찾기</a>-->
           </div>
 
           <AppButton type="submit" :loading="loading" :full-width="true">로그인</AppButton>

@@ -68,7 +68,7 @@ async function onSubmit() {
   <div class="auth-page">
     <nav class="auth-nav">
       <AppLogo :size="22" />
-      <span class="auth-nav__help">도움말</span>
+<!--      <span class="auth-nav__help">도움말</span>-->
     </nav>
 
     <div class="auth-center">
