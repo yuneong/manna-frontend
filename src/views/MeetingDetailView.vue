@@ -10,6 +10,7 @@ import AvatarStack from '../components/common/AvatarStack.vue'
 import KebabMenu from '../components/common/KebabMenu.vue'
 import PlaceTab from '../components/meeting/PlaceTab.vue'
 import PhaseTabs from '../components/meeting/PhaseTabs.vue'
+import { avatarColorForId } from '../utils/avatar'
 
 const route = useRoute()
 const router = useRouter()
@@ -56,6 +57,29 @@ watch(
 const heatmap = computed(() => {
   const raw = heatmapData.value?.heatmap ?? {}
   return Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, v.count]))
+})
+
+const selectedHeatDate = ref<string | null>(null)
+watch(heatmapData, (data) => {
+  if (!data || selectedHeatDate.value) return
+  const entries = Object.entries(data.heatmap)
+  if (!entries.length) return
+  const max = Math.max(...entries.map(([, v]) => v.count))
+  if (max === 0) return
+  const best = entries.find(([, v]) => v.count === max)
+  if (best) selectedHeatDate.value = best[0]
+}, { immediate: true })
+
+const selectedHeatCount = computed(() =>
+  heatmapData.value?.heatmap[selectedHeatDate.value ?? '']?.count ?? 0
+)
+const selectedHeatDateObj = computed(() =>
+  selectedHeatDate.value ? parseLocalDate(selectedHeatDate.value) : null
+)
+const heatDetailParticipants = computed(() => {
+  if (!selectedHeatDate.value || !meeting.value) return []
+  const availIds = new Set(heatmapData.value?.heatmap[selectedHeatDate.value]?.availableParticipantIds ?? [])
+  return meeting.value.participants.map(p => ({ ...p, available: availIds.has(p.id) }))
 })
 const participantNames = computed(() =>
   meeting.value?.participants.map((p) => p.nickname) ?? [],
@@ -599,11 +623,14 @@ function copyLink() {
                       'heat-cell',
                       !isConfirmed && heatmap[ymd(d)] === maxHeatCount && maxHeatCount > 0 && 'heat-cell--top',
                       isConfirmed && confirmedDate && isSameDay(d, confirmedDate) && 'heat-cell--confirmed',
+                      selectedHeatDate === ymd(d) && 'heat-cell--selected',
                     ]"
                     :style="{
                       background: heatmap[ymd(d)] ? heatColor(heatmap[ymd(d)]!, totalParticipants) : '#FAFAFB',
                       transform: isConfirmed && confirmedDate && isSameDay(d, confirmedDate) ? 'scale(1.02)' : 'none',
+                      cursor: 'pointer',
                     }"
+                    @click="selectedHeatDate = ymd(d)"
                   >
                     <div class="heat-cell__top-row">
                       <span class="heat-cell__num" :style="{ color: heatTextColor(heatmap[ymd(d)] || 0, totalParticipants) }">
@@ -631,6 +658,50 @@ function copyLink() {
                 <div v-else class="cal-grid__empty">
                   {{ d.getMonth() === calMonth ? d.getDate() : '' }}
                 </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 날짜별 참여자 현황 -->
+          <div v-if="selectedHeatDate && selectedHeatDateObj" class="heat-detail">
+            <div class="heat-detail__header">
+              <div class="heat-detail__header-left">
+                <span class="heat-detail__date">{{ fmtDate(selectedHeatDateObj) }}</span>
+                <span v-if="selectedHeatCount === maxHeatCount && maxHeatCount > 0" class="heat-detail__best">
+                  <svg width="9" height="9" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                    <path d="M5 1l1.2 2.5L9 4l-2 1.9.5 2.7L5 7.3 2.5 8.6 3 5.9 1 4l2.8-.5L5 1z" fill="currentColor"/>
+                  </svg>
+                  최다 득표
+                </span>
+              </div>
+              <span class="heat-detail__count">
+                <b>{{ selectedHeatCount }}</b>/{{ totalParticipants }}명 가능
+              </span>
+            </div>
+            <div class="heat-detail__grid">
+              <div v-for="p in heatDetailParticipants" :key="p.id" class="heat-detail__person" :class="!p.available && 'heat-detail__person--dim'">
+                <div class="heat-detail__avatar-wrap">
+                  <img
+                    v-if="p.profileImageUrl"
+                    class="heat-detail__avatar heat-detail__avatar--img"
+                    :src="p.profileImageUrl"
+                    alt=""
+                  />
+                  <div
+                    v-else
+                    class="heat-detail__avatar"
+                    :style="{ background: p.available ? avatarColorForId(p.id) : '#EFEFF3', color: p.available ? '#fff' : 'var(--color-text-placeholder)' }"
+                  >{{ p.nickname[0] }}</div>
+                  <span :class="['heat-detail__indicator', p.available ? 'heat-detail__indicator--ok' : 'heat-detail__indicator--no']">
+                    <svg v-if="p.available" width="8" height="8" viewBox="0 0 8 8" fill="none">
+                      <path d="M1.5 4l1.5 1.5L6.5 2" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <svg v-else width="7" height="7" viewBox="0 0 7 7" fill="none">
+                      <path d="M1.5 1.5l4 4M5.5 1.5l-4 4" stroke="#fff" stroke-width="1.3" stroke-linecap="round"/>
+                    </svg>
+                  </span>
+                </div>
+                <span class="heat-detail__name">{{ p.nickname }}</span>
               </div>
             </div>
           </div>
@@ -1348,6 +1419,11 @@ function copyLink() {
 .heat-cell--top {
   border: 1.5px solid var(--color-primary);
 }
+.heat-cell--selected {
+  border: 1.5px solid var(--color-success, #0F6E56) !important;
+  transform: scale(1.04) !important;
+  z-index: 1;
+}
 .heat-cell--confirmed {
   border: 2.5px solid var(--color-success) !important;
   box-shadow: 0 0 0 4px rgba(15,110,86,0.20);
@@ -1373,6 +1449,103 @@ function copyLink() {
 .heat-cell__count {
   font-size: 12px;
   font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.heat-detail {
+  background: #fff;
+  border: 1.5px solid var(--color-border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-top: -6px;
+  margin-bottom: 16px;
+}
+.heat-detail__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.heat-detail__header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.heat-detail__date {
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+}
+.heat-detail__best {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: rgba(83, 74, 183, 0.10);
+  color: var(--color-primary);
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.heat-detail__count {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.heat-detail__count b {
+  color: var(--color-text-primary);
+  font-weight: 700;
+}
+.heat-detail__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 14px;
+}
+.heat-detail__person {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+.heat-detail__person--dim { opacity: 0.4; }
+.heat-detail__avatar-wrap { position: relative; }
+.heat-detail__avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.10);
+}
+.heat-detail__avatar--img { object-fit: cover; }
+.heat-detail__indicator {
+  position: absolute;
+  bottom: -2px;
+  right: -3px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.heat-detail__indicator--ok { background: var(--color-success, #0F6E56); }
+.heat-detail__indicator--no { background: #BFBFC7; }
+.heat-detail__name {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
   letter-spacing: -0.01em;
 }
 .heat-cell__star {
