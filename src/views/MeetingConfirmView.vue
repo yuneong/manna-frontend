@@ -37,7 +37,7 @@ function ymd(d: Date): string {
   return dayjs(d).format('YYYY-MM-DD')
 }
 function parseLocalDate(s: string): Date {
-  const [y, m, d] = s.split('-').map(Number)
+  const [y, m, d] = s.split('-').map(Number) as [number, number, number]
   return new Date(y, m - 1, d)
 }
 function fmtDateKo(d: Date): string {
@@ -129,7 +129,7 @@ const palette = ['#534AB7','#0F6E56','#C8362B','#D89B1A','#3B70C9','#8E4FBE']
 function avatarColor(name: string): string {
   let hash = 0
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
-  return palette[Math.abs(hash) % palette.length]
+  return palette[Math.abs(hash) % palette.length]!
 }
 
 // Confirm action

@@ -15,7 +15,7 @@ const { mutate: createRevote, isPending } = useCreateRevote(meetingId)
 const DAYS = ['일', '월', '화', '수', '목', '금', '토']
 
 function parseLocalDate(s: string): Date {
-  const [y, m, d] = s.split('-').map(Number)
+  const [y, m, d] = s.split('-').map(Number) as [number, number, number]
   return new Date(y, m - 1, d)
 }
 function ymd(d: Date): string {

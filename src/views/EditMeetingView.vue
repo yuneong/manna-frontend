@@ -25,7 +25,7 @@ const toast = ref<string | null>(null)
 let initialized = false
 
 function parseLocalDate(s: string): Date {
-  const [y, m, d] = s.split('-').map(Number)
+  const [y, m, d] = s.split('-').map(Number) as [number, number, number]
   return new Date(y, m - 1, d)
 }
 

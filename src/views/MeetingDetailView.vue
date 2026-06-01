@@ -75,7 +75,7 @@ function ymd(d: Date): string {
   return dayjs(d).format('YYYY-MM-DD')
 }
 function parseLocalDate(s: string): Date {
-  const [y, m, d] = s.split('-').map(Number)
+  const [y, m, d] = s.split('-').map(Number) as [number, number, number]
   return new Date(y, m - 1, d)
 }
 function fmtDate(d: Date): string {
@@ -595,7 +595,7 @@ function copyLink() {
                       isConfirmed && confirmedDate && isSameDay(d, confirmedDate) && 'heat-cell--confirmed',
                     ]"
                     :style="{
-                      background: heatmap[ymd(d)] ? heatColor(heatmap[ymd(d)], totalParticipants) : '#FAFAFB',
+                      background: heatmap[ymd(d)] ? heatColor(heatmap[ymd(d)]!, totalParticipants) : '#FAFAFB',
                       transform: isConfirmed && confirmedDate && isSameDay(d, confirmedDate) ? 'scale(1.02)' : 'none',
                     }"
                   >

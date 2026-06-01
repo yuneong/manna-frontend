@@ -36,7 +36,7 @@ const sortedPlaces = computed<Place[]>(() => {
 })
 
 const maxVotes = computed(() =>
-  sortedPlaces.value.length > 0 ? sortedPlaces.value[0].voteCount : 0,
+  sortedPlaces.value.length > 0 ? sortedPlaces.value[0]!.voteCount : 0,
 )
 
 const leaderCount = computed(() =>

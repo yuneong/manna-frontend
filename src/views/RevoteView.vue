@@ -17,7 +17,7 @@ const DAYS = ['일', '월', '화', '수', '목', '금', '토']
 const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']
 
 function parseLocalDate(s: string): Date {
-  const [y, m, d] = s.split('-').map(Number)
+  const [y, m, d] = s.split('-').map(Number) as [number, number, number]
   return new Date(y, m - 1, d)
 }
 
@@ -205,7 +205,7 @@ function fmtDateShort(d: Date): string {
                     />
                   </div>
                   <div v-if="v.voters.length > 0" class="voter-names">
-                    <AvatarStack :names="v.voters.slice(0, 4).map(n => n[0])" />
+                    <AvatarStack :names="v.voters.slice(0, 4).map(n => n.charAt(0))" />
                     <span>{{ v.voters.join(', ') }}</span>
                   </div>
                 </div>
@@ -266,7 +266,7 @@ function fmtDateShort(d: Date): string {
               <div>
                 <div class="cta-box__title">
                   {{ isComplete && leaders.length > 0
-                    ? `최다 득표 — ${fmtDateShort(parseLocalDate(leaders[0].date))}`
+                    ? `최다 득표 — ${fmtDateShort(parseLocalDate(leaders[0]!.date))}`
                     : '참여자 응답을 기다리는 중' }}
                 </div>
                 <div class="cta-box__sub">
@@ -280,7 +280,7 @@ function fmtDateShort(d: Date): string {
               class="confirm-btn confirm-btn--success"
               :class="!isComplete && 'confirm-btn--disabled'"
               :disabled="!isComplete || isConfirming"
-              @click="isComplete && leaders.length > 0 && confirmDate(leaders[0].date)"
+              @click="isComplete && leaders.length > 0 && confirmDate(leaders[0]!.date)"
             >
               <span v-if="isConfirming" class="spinner" />
               <template v-else>
