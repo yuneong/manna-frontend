@@ -54,7 +54,10 @@ async function onSubmit() {
     } else {
       localStorage.removeItem('savedEmail')
     }
-    const redirect = route.query.redirect as string | undefined
+    const redirect =
+      sessionStorage.getItem('redirectAfterLogin') ||
+      (route.query.redirect as string | undefined)
+    sessionStorage.removeItem('redirectAfterLogin')
     await router.push(redirect || '/')
   } catch (e: any) {
     serverError.value = e.response?.data?.message || '이메일 또는 비밀번호를 확인해주세요'

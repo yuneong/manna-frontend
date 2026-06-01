@@ -28,7 +28,10 @@ const router = createRouter({
 
 router.beforeEach((to) => {
   const token = localStorage.getItem('accessToken')
-  if (!to.meta.public && !token) return { name: 'login', query: { redirect: to.fullPath } }
+  if (!to.meta.public && !token) {
+    sessionStorage.setItem('redirectAfterLogin', to.fullPath)
+    return { name: 'login', query: { redirect: to.fullPath } }
+  }
   if (to.meta.public && token && (to.name === 'login' || to.name === 'sign-up')) {
     return { name: 'home' }
   }

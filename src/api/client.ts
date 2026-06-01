@@ -15,7 +15,7 @@ client.interceptors.response.use(
   (res) => res,
   (error) => {
     const url = error.config?.url ?? ''
-    const isAuthEndpoint = url.includes('/users/login') || url.includes('/users/signup')
+    const isAuthEndpoint = url.includes('/users/login') || url.includes('/users/sign-up')
     if (error.response?.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem('accessToken')
       const redirect = encodeURIComponent(window.location.pathname + window.location.search)
