@@ -38,6 +38,7 @@ export const meetingApi = {
     client.post<RevoteResponse>(`/v1/meetings/${id}/revote/vote`, data),
   confirmRevote: (id: number, data: ConfirmRevoteRequest) =>
     client.post<Meeting>(`/v1/meetings/${id}/revote/confirm`, data),
+  cancelRevote: (id: number) => client.delete(`/v1/meetings/${id}/revote`),
   getPlaces: (id: number) => client.get<PlacesResponse>(`/v1/meetings/${id}/places`),
   suggestPlace: (id: number, data: PlaceSuggestRequest) =>
     client.post<Place>(`/v1/meetings/${id}/places`, data),

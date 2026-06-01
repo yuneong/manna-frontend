@@ -140,6 +140,19 @@ export function useRevote(
   })
 }
 
+ export function useCancelRevote(meetingId: number) {
+  const router = useRouter()
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => meetingApi.cancelRevote(meetingId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['meetings', meetingId] })
+      queryClient.invalidateQueries({ queryKey: ['meetings', meetingId, 'revote'] })
+      router.push(`/meetings/${meetingId}`)
+    },
+  })
+}
+
 export function useCreateRevote(meetingId: number) {
   const router = useRouter()
   const queryClient = useQueryClient()

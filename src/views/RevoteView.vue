@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useMeeting, useRevote, useVoteRevote, useConfirmRevote } from '../composables/useMeeting'
+import { useMeeting, useRevote, useVoteRevote, useConfirmRevote, useCancelRevote } from '../composables/useMeeting'
 import { useAuthStore } from '../stores/auth'
 import AvatarStack from '../components/common/AvatarStack.vue'
 
@@ -75,6 +75,22 @@ const hasVoted = computed(() => !!myVotedDate.value && !isChangingVote.value)
 
 const { mutate: submitVote, isPending: isVoting } = useVoteRevote(meetingId)
 const { mutate: doConfirm, isPending: isConfirming } = useConfirmRevote(meetingId)
+const { mutate: doCancel, isPending: isCancelling } = useCancelRevote(meetingId)
+
+const showCancelModal = ref(false)
+const cancelError = ref<string | null>(null)
+
+function cancelRevote() {
+  doCancel(undefined, {
+    onError: (e: any) => {
+      showCancelModal.value = false
+      const status = e?.response?.status
+      if (status === 403) cancelError.value = '방장만 재투표를 취소할 수 있어요'
+      else if (status === 404) cancelError.value = '진행 중인 재투표가 없어요'
+      else cancelError.value = '재투표 취소에 실패했어요'
+    },
+  })
+}
 
 function pickDate(dateStr: string) {
   if (!hasVoted.value) picked.value = dateStr
@@ -294,6 +310,29 @@ function fmtDateShort(d: Date): string {
               </template>
             </button>
           </div>
+          <!-- 재투표 취소 -->
+          <div class="cancel-revote-wrap">
+            <button class="cancel-revote-btn" @click="showCancelModal = true">재투표 취소하기</button>
+          </div>
+
+          <!-- 에러 토스트 -->
+          <div v-if="cancelError" class="rv-toast" @click="cancelError = null">{{ cancelError }}</div>
+
+          <!-- 취소 확인 모달 -->
+          <div v-if="showCancelModal" class="modal-overlay" @click.self="showCancelModal = false">
+            <div class="modal">
+              <div class="modal__title">재투표를 취소할까요?</div>
+              <div class="modal__desc">취소하면 진행 중인 재투표가 삭제되고<br>약속방으로 돌아갑니다.</div>
+              <div class="modal__actions">
+                <button class="modal__btn modal__btn--ghost" :disabled="isCancelling" @click="showCancelModal = false">닫기</button>
+                <button class="modal__btn modal__btn--danger" :disabled="isCancelling" @click="cancelRevote">
+                  <span v-if="isCancelling" class="spinner" />
+                  <template v-else>취소하기</template>
+                </button>
+              </div>
+            </div>
+          </div>
+
         </template>
 
         <!-- ========== 참여자 / 방장 투표 화면 ========== -->
@@ -928,5 +967,95 @@ button.result-row:not(:disabled) { cursor: pointer; }
   .cta-box { flex-direction: column; }
   .confirm-btn { width: 100%; }
   .results-card { padding: 14px 14px; }
+}
+.cancel-revote-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+.cancel-revote-btn {
+  background: none;
+  border: none;
+  font-size: 13px;
+  color: var(--color-text-placeholder);
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-family: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.15s;
+}
+.cancel-revote-btn:hover { color: #C8362B; }
+.rv-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30,30,35,0.92);
+  color: #fff;
+  font-size: 13.5px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  cursor: pointer;
+  z-index: 200;
+  white-space: nowrap;
+}
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  padding: 24px;
+}
+.modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px 24px 20px;
+  width: 100%;
+  max-width: 340px;
+}
+.modal__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 8px;
+}
+.modal__desc {
+  font-size: 13.5px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+.modal__actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.modal__btn {
+  padding: 9px 18px;
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  transition: opacity 0.15s;
+}
+.modal__btn:disabled { opacity: 0.6; cursor: default; }
+.modal__btn--ghost {
+  background: var(--color-bg-secondary, #f4f4f8);
+  color: var(--color-text-secondary);
+}
+.modal__btn--danger {
+  background: #C8362B;
+  color: #fff;
+  min-width: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
