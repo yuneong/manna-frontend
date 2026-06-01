@@ -3,6 +3,7 @@ export type MeetingStatus = 'OPEN' | 'CONFIRMED' | 'PLACE_VOTING' | 'SETTLING' |
 export interface Participant {
   id: number
   nickname: string
+  profileImageUrl?: string | null
 }
 
 export interface Meeting {
@@ -96,6 +97,7 @@ export interface PlaceProposer {
 export interface PlaceVoter {
   id: number
   nickname: string
+  profileImageUrl?: string | null
 }
 
 export interface Place {

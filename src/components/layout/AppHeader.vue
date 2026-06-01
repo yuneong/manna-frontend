@@ -8,8 +8,16 @@ import AppLogo from '../common/AppLogo.vue'
 const authStore = useAuthStore()
 const { logout } = useAuth()
 
+const palette = ['#534AB7', '#0F6E56', '#C8362B', '#D89B1A', '#3B70C9', '#8E4FBE']
 const initial = computed(() => authStore.user?.nickname?.[0]?.toUpperCase() ?? '')
 const thumbnailUrl = computed(() => authStore.user?.profileImageUrl ?? null)
+const avatarColor = computed(() => {
+  const name = authStore.user?.nickname ?? ''
+  if (!name) return '#534AB7'
+  let hash = 0
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  return palette[Math.abs(hash) % palette.length]!
+})
 </script>
 
 <template>
@@ -20,7 +28,7 @@ const thumbnailUrl = computed(() => authStore.user?.profileImageUrl ?? null)
       </RouterLink>
       <div v-if="authStore.isAuthenticated" class="header__right">
         <img v-if="thumbnailUrl" :src="thumbnailUrl" class="header__avatar header__avatar--img" alt="" aria-hidden="true" />
-        <span v-else class="header__avatar" aria-hidden="true">{{ initial }}</span>
+        <span v-else class="header__avatar" :style="{ background: avatarColor }" aria-hidden="true">{{ initial }}</span>
         <button class="header__logout" @click="logout">로그아웃</button>
       </div>
     </div>
@@ -72,7 +80,6 @@ const thumbnailUrl = computed(() => authStore.user?.profileImageUrl ?? null)
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #534AB7, #7a72d4);
   color: #fff;
   font-size: 12px;
   font-weight: 700;

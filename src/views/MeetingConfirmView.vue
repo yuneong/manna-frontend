@@ -357,7 +357,8 @@ function confirm() {
                   :key="p.id"
                   class="participant"
                 >
-                  <div class="participant__avatar" :style="{ background: avatarColor(p.nickname) }">
+                  <img v-if="p.profileImageUrl" class="participant__avatar participant__avatar--img" :src="p.profileImageUrl" alt="" />
+                  <div v-else class="participant__avatar" :style="{ background: avatarColor(p.nickname) }">
                     {{ p.nickname[0] }}
                   </div>
                   <span class="participant__name">{{ p.nickname }}</span>
@@ -367,8 +368,9 @@ function confirm() {
                   :key="p.id"
                   class="participant participant--dim"
                 >
-                  <div class="participant__avatar participant__avatar--dim">
-                    {{ p.nickname[0] }}
+                  <div class="participant__avatar" :class="p.profileImageUrl ? 'participant__avatar--img-wrap' : 'participant__avatar--dim'">
+                    <img v-if="p.profileImageUrl" :src="p.profileImageUrl" alt="" />
+                    <template v-else>{{ p.nickname[0] }}</template>
                     <div class="participant__x">
                       <svg width="7" height="7" viewBox="0 0 7 7" fill="none" aria-hidden="true">
                         <path d="M1.5 1.5l4 4M5.5 1.5l-4 4" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/>
@@ -876,6 +878,21 @@ function confirm() {
   color: var(--color-text-placeholder);
   box-shadow: none;
   position: relative;
+}
+.participant__avatar--img {
+  object-fit: cover;
+}
+.participant__avatar--img-wrap {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+}
+.participant__avatar--img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
 }
 .participant__x {
   position: absolute;

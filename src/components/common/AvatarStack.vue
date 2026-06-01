@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 
 const props = withDefaults(
-  defineProps<{ names: string[]; max?: number }>(),
+  defineProps<{ names: string[]; images?: (string | null | undefined)[]; max?: number }>(),
   { max: 4 },
 )
 
@@ -14,21 +14,29 @@ const overflow = computed(() => Math.max(0, props.names.length - props.max))
 function colorFor(name: string) {
   let hash = 0
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
-  return palette[Math.abs(hash) % palette.length]
+  return palette[Math.abs(hash) % palette.length]!
 }
 </script>
 
 <template>
   <div class="stack">
-    <span
-      v-for="name in visible"
-      :key="name"
-      class="stack__avatar"
-      :style="{ background: colorFor(name) }"
-      :title="name"
-    >
-      {{ name[0] }}
-    </span>
+    <template v-for="(name, i) in visible" :key="name">
+      <img
+        v-if="images?.[i]"
+        :src="images[i]!"
+        class="stack__avatar stack__avatar--img"
+        :title="name"
+        alt=""
+      />
+      <span
+        v-else
+        class="stack__avatar"
+        :style="{ background: colorFor(name) }"
+        :title="name"
+      >
+        {{ name[0] }}
+      </span>
+    </template>
     <span v-if="overflow > 0" class="stack__overflow">+{{ overflow }}</span>
   </div>
 </template>
@@ -55,6 +63,9 @@ function colorFor(name: string) {
 .stack__avatar:first-child,
 .stack__overflow:first-child {
   margin-left: 0;
+}
+.stack__avatar--img {
+  object-fit: cover;
 }
 .stack__overflow {
   background: #e0dff5;

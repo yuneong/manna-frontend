@@ -82,7 +82,11 @@ function displayUrl(url: string): string {
         <span class="card__proposer-name">{{ place.proposer.nickname }} 제안</span>
       </div>
       <div v-if="place.voteCount > 0" class="card__voters">
-        <AvatarStack :names="place.voters.map(v => typeof v === 'string' ? v : v?.nickname).filter((n): n is string => !!n).slice(0, 4)" :max="4" />
+        <AvatarStack
+          :names="place.voters.map(v => typeof v === 'string' ? v : v?.nickname).filter((n): n is string => !!n).slice(0, 4)"
+          :images="place.voters.slice(0, 4).map(v => typeof v === 'string' ? null : (v?.profileImageUrl ?? null))"
+          :max="4"
+        />
         <span class="card__voters-count">{{ place.voteCount }}/{{ totalParticipants }}명</span>
       </div>
     </div>
