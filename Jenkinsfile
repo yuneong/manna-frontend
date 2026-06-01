@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        nodejs 'NodeJS'
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -20,6 +24,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 sh '''
+                    rm -rf /var/www/frontend/dist/*
                     cp -r dist/* /var/www/frontend/dist/
                 '''
             }
