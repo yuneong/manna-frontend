@@ -9,6 +9,7 @@ const authStore = useAuthStore()
 const { logout } = useAuth()
 
 const initial = computed(() => authStore.user?.nickname?.[0]?.toUpperCase() ?? '')
+const thumbnailUrl = computed(() => authStore.user?.profileImageUrl ?? null)
 </script>
 
 <template>
@@ -18,7 +19,8 @@ const initial = computed(() => authStore.user?.nickname?.[0]?.toUpperCase() ?? '
         <AppLogo :size="20" />
       </RouterLink>
       <div v-if="authStore.isAuthenticated" class="header__right">
-        <span class="header__avatar" aria-hidden="true">{{ initial }}</span>
+        <img v-if="thumbnailUrl" :src="thumbnailUrl" class="header__avatar header__avatar--img" alt="" aria-hidden="true" />
+        <span v-else class="header__avatar" aria-hidden="true">{{ initial }}</span>
         <button class="header__logout" @click="logout">로그아웃</button>
       </div>
     </div>
@@ -77,6 +79,10 @@ const initial = computed(() => authStore.user?.nickname?.[0]?.toUpperCase() ?? '
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.header__avatar--img {
+  object-fit: cover;
+  background: none;
 }
 .header__logout {
   font-size: 13px;
