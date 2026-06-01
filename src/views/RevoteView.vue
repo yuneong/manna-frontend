@@ -53,7 +53,7 @@ const isTie = computed(() => isComplete.value && leaders.value.length > 1)
 // Who hasn't voted yet
 const allVoterNames = computed(() => {
   const s = new Set<string>()
-  votes.value.forEach(v => v.voters.forEach(n => s.add(n)))
+  votes.value.forEach(v => v.voters.forEach(voter => s.add(voter.nickname)))
   return s
 })
 const pendingVoters = computed(() =>
@@ -205,8 +205,11 @@ function fmtDateShort(d: Date): string {
                     />
                   </div>
                   <div v-if="v.voters.length > 0" class="voter-names">
-                    <AvatarStack :names="v.voters.slice(0, 4).map(n => n.charAt(0))" />
-                    <span>{{ v.voters.join(', ') }}</span>
+                    <AvatarStack
+                      :names="v.voters.slice(0, 4).map(n => n.nickname)"
+                      :ids="v.voters.slice(0, 4).map(n => n.id)"
+                    />
+                    <span>{{ v.voters.map(n => n.nickname).join(', ') }}</span>
                   </div>
                 </div>
               </button>

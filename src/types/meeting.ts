@@ -63,10 +63,15 @@ export interface ConfirmDateRequest {
 
 export type RevoteStatus = 'OPEN' | 'CLOSED'
 
+export interface RevoteVoter {
+  id: number
+  nickname: string
+}
+
 export interface RevoteCandidate {
   date: string
   count: number
-  voters: string[]
+  voters: RevoteVoter[]
 }
 
 export interface RevoteResponse {

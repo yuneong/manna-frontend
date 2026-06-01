@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import dayjs from 'dayjs'
 import { useMeeting, useHeatmap, useConfirmDate } from '../composables/useMeeting'
+import { avatarColorForId } from '../utils/avatar'
 
 const route = useRoute()
 const router = useRouter()
@@ -124,13 +125,6 @@ function ratioBucket(count: number, total: number): string {
 function bucketBg(count: number, total: number) { return BUCKET_BG[ratioBucket(count, total)] }
 function bucketFg(count: number, total: number) { return BUCKET_FG[ratioBucket(count, total)] }
 
-// Participant avatar palette
-const palette = ['#534AB7','#0F6E56','#C8362B','#D89B1A','#3B70C9','#8E4FBE']
-function avatarColor(name: string): string {
-  let hash = 0
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
-  return palette[Math.abs(hash) % palette.length]!
-}
 
 // Confirm action
 function confirm() {
@@ -358,7 +352,7 @@ function confirm() {
                   class="participant"
                 >
                   <img v-if="p.profileImageUrl" class="participant__avatar participant__avatar--img" :src="p.profileImageUrl" alt="" />
-                  <div v-else class="participant__avatar" :style="{ background: avatarColor(p.nickname) }">
+                  <div v-else class="participant__avatar" :style="{ background: avatarColorForId(p.id) }">
                     {{ p.nickname[0] }}
                   </div>
                   <span class="participant__name">{{ p.nickname }}</span>

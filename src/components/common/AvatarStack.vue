@@ -1,8 +1,14 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { avatarColorForId } from '../../utils/avatar'
 
 const props = withDefaults(
-  defineProps<{ names: string[]; images?: (string | null | undefined)[]; max?: number }>(),
+  defineProps<{
+    names: string[]
+    images?: (string | null | undefined)[]
+    ids?: number[]
+    max?: number
+  }>(),
   { max: 4 },
 )
 
@@ -11,9 +17,10 @@ const palette = ['#534AB7', '#0F6E56', '#C8362B', '#D89B1A', '#3B70C9', '#8E4FBE
 const visible = computed(() => props.names.slice(0, props.max))
 const overflow = computed(() => Math.max(0, props.names.length - props.max))
 
-function colorFor(name: string) {
+function colorFor(name: string, i: number): string {
+  if (props.ids?.[i] != null) return avatarColorForId(props.ids[i]!)
   let hash = 0
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  for (let j = 0; j < name.length; j++) hash = name.charCodeAt(j) + ((hash << 5) - hash)
   return palette[Math.abs(hash) % palette.length]!
 }
 </script>
@@ -31,7 +38,7 @@ function colorFor(name: string) {
       <span
         v-else
         class="stack__avatar"
-        :style="{ background: colorFor(name) }"
+        :style="{ background: colorFor(name, i) }"
         :title="name"
       >
         {{ name[0] }}

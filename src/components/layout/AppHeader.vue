@@ -4,20 +4,16 @@ import { RouterLink } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { useAuth } from '../../composables/useAuth'
 import AppLogo from '../common/AppLogo.vue'
+import { avatarColorForId } from '../../utils/avatar'
 
 const authStore = useAuthStore()
 const { logout } = useAuth()
 
-const palette = ['#534AB7', '#0F6E56', '#C8362B', '#D89B1A', '#3B70C9', '#8E4FBE']
 const initial = computed(() => authStore.user?.nickname?.[0]?.toUpperCase() ?? '')
 const thumbnailUrl = computed(() => authStore.user?.profileImageUrl ?? null)
-const avatarColor = computed(() => {
-  const name = authStore.user?.nickname ?? ''
-  if (!name) return '#534AB7'
-  let hash = 0
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash)
-  return palette[Math.abs(hash) % palette.length]!
-})
+const avatarColor = computed(() =>
+  authStore.user ? avatarColorForId(authStore.user.id) : '#534AB7',
+)
 </script>
 
 <template>

@@ -31,6 +31,9 @@ const participantNames = computed(() =>
 const participantImages = computed(() =>
   props.meeting.participants.map((p: Participant) => p.profileImageUrl ?? null),
 )
+const participantIds = computed(() =>
+  props.meeting.participants.map((p: Participant) => p.id),
+)
 </script>
 
 <template>
@@ -65,7 +68,7 @@ const participantImages = computed(() =>
     </div>
 
     <div class="card__footer">
-      <AvatarStack :names="participantNames" :images="participantImages" />
+      <AvatarStack :names="participantNames" :images="participantImages" :ids="participantIds" />
       <div class="card__vote-row">
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true" class="card__meta-icon">
           <path d="M1.5 9.5L4 4l2.5 4L9 2l2.5 7.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" />

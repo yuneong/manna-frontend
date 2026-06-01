@@ -63,6 +63,9 @@ const participantNames = computed(() =>
 const participantImages = computed(() =>
   meeting.value?.participants.map((p) => p.profileImageUrl ?? null) ?? [],
 )
+const participantIds = computed(() =>
+  meeting.value?.participants.map((p) => p.id) ?? [],
+)
 const totalParticipants = computed(() => meeting.value?.participantCount ?? 0)
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토']
@@ -300,7 +303,7 @@ function copyLink() {
             </div>
             <div class="mcard__footer">
               <div class="mcard__participants">
-                <AvatarStack :names="participantNames" :images="participantImages" />
+                <AvatarStack :names="participantNames" :images="participantImages" :ids="participantIds" />
                 <span class="mcard__participants-label">{{ meeting.participantCount }}명 참여</span>
               </div>
             </div>
@@ -338,7 +341,7 @@ function copyLink() {
             </div>
             <div class="mcard__footer">
               <div class="mcard__participants">
-                <AvatarStack :names="participantNames" :images="participantImages" />
+                <AvatarStack :names="participantNames" :images="participantImages" :ids="participantIds" />
                 <span class="mcard__participants-label">
                   {{ meeting.responseCount }}/{{ meeting.participantCount }}명 응답
                 </span>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Place } from '../../types/meeting'
 import AvatarStack from '../common/AvatarStack.vue'
+import { avatarColorForId } from '../../utils/avatar'
 
 defineProps<{
   place: Place
@@ -78,13 +79,14 @@ function displayUrl(url: string): string {
     <!-- Bottom: proposer · voters -->
     <div :class="['card__bottom', isLeader && 'card__bottom--leader']">
       <div class="card__proposer">
-        <span class="card__proposer-avatar">{{ place.proposer.nickname[0] }}</span>
+        <span class="card__proposer-avatar" :style="{ background: avatarColorForId(place.proposer.id) }">{{ place.proposer.nickname[0] }}</span>
         <span class="card__proposer-name">{{ place.proposer.nickname }} 제안</span>
       </div>
       <div v-if="place.voteCount > 0" class="card__voters">
         <AvatarStack
-          :names="place.voters.map(v => typeof v === 'string' ? v : v?.nickname).filter((n): n is string => !!n).slice(0, 4)"
-          :images="place.voters.slice(0, 4).map(v => typeof v === 'string' ? null : (v?.profileImageUrl ?? null))"
+          :names="place.voters.slice(0, 4).map(v => v.nickname)"
+          :images="place.voters.slice(0, 4).map(v => v.profileImageUrl ?? null)"
+          :ids="place.voters.slice(0, 4).map(v => v.id)"
           :max="4"
         />
         <span class="card__voters-count">{{ place.voteCount }}/{{ totalParticipants }}명</span>
@@ -230,7 +232,6 @@ function displayUrl(url: string): string {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: var(--color-primary);
   color: #fff;
   display: inline-flex;
   align-items: center;
