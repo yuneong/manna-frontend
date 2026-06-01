@@ -2013,7 +2013,8 @@ function copyLink() {
   .heat-cell__num { font-size: 11px; }
   .heat-cell__dow { font-size: 9px; }
   .heat-cell__count { font-size: 9px; }
-  .heat-cell__star { display: none; }
+  .heat-cell__star { width: 12px; height: 12px; top: -4px; right: -4px; }
+  .heat-cell__star svg { width: 7px; height: 7px; }
   .heat-cell__confirmed-badge { width: 16px; height: 16px; top: -5px; right: -5px; }
   .heat-cell__confirmed-badge svg { width: 8px; height: 8px; }
   .revote-active-banner { flex-direction: column; }
