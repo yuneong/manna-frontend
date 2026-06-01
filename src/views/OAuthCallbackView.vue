@@ -14,7 +14,9 @@ onMounted(async () => {
   if (token) {
     authStore.setToken(token)
     await fetchMe()
-    router.replace('/')
+    const redirect = sessionStorage.getItem('redirectAfterLogin') || '/'
+    sessionStorage.removeItem('redirectAfterLogin')
+    router.replace(redirect)
   } else {
     router.replace({ name: 'login', query: { error: 'social' } })
   }
