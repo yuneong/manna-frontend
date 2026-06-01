@@ -45,11 +45,15 @@ watch(meeting, (m) => {
 let l1Initialized = false
 watch(
   () => meeting.value?.status,
-  (status) => {
-    if (!status || l1Initialized) return
+  (status, prev) => {
+    if (!status) return
+    if (status === 'PLACE_VOTING' && prev !== 'PLACE_VOTING') {
+      l1.value = 'place'
+    } else if (!l1Initialized) {
+      if (status === 'CONFIRMED') l1.value = 'place'
+      else if (status === 'SETTLING') l1.value = 'settle'
+    }
     l1Initialized = true
-    if (status === 'CONFIRMED' || status === 'PLACE_VOTING') l1.value = 'place'
-    else if (status === 'SETTLING') l1.value = 'settle'
   },
   { immediate: true },
 )
