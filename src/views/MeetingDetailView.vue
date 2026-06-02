@@ -38,7 +38,6 @@ const isHost = computed(() => meeting.value?.hostId === authStore.user?.id)
 const isConfirmed = computed(() => !!meeting.value && meeting.value.status !== 'OPEN')
 const hasActiveRevote = computed(() => revoteData.value?.status === 'OPEN')
 const canCancelConfirm = computed(() => meeting.value?.status === 'CONFIRMED')
-const canEditConfirm = computed(() => meeting.value?.status === 'CONFIRMED' || meeting.value?.status === 'PLACE_VOTING')
 
 watch(meeting, (m) => {
   if (!m || !authStore.user) return
@@ -771,7 +770,7 @@ function copyLink() {
               </svg>
               <div>
                 <div class="host-confirmed-actions__title">날짜를 변경해야 하나요?</div>
-                <div class="host-confirmed-actions__sub">방장(나)만 확정을 수정하거나 취소할 수 있어요</div>
+                <div class="host-confirmed-actions__sub">방장(나)만 확정을 취소할 수 있어요</div>
               </div>
             </div>
             <div class="host-confirmed-actions__btns">
@@ -782,7 +781,6 @@ function copyLink() {
                   <span class="cancel-confirm-tooltip__arrow" />
                 </div>
               </div>
-              <button class="edit-confirm-btn" :disabled="!canEditConfirm" @click="canEditConfirm && router.push(`/meetings/${meetingId}/edit`)">확정 수정</button>
             </div>
           </div>
         </template>
@@ -1871,8 +1869,7 @@ function copyLink() {
   background: rgba(200,54,43,0.06);
   border-color: #C8362B;
 }
-.cancel-confirm-btn:disabled,
-.edit-confirm-btn:disabled {
+.cancel-confirm-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
@@ -1906,25 +1903,6 @@ function copyLink() {
   height: 8px;
   background: rgba(20, 20, 30, 0.92);
 }
-.edit-confirm-btn {
-  padding: 11px 18px;
-  background: var(--color-primary);
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  font-size: 13.5px;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-  letter-spacing: -0.01em;
-  transition: background 0.12s, box-shadow 0.12s;
-  box-shadow: 0 1px 2px rgba(83,74,183,0.18);
-}
-.edit-confirm-btn:hover:not(:disabled) {
-  background: var(--color-primary-dark);
-  box-shadow: 0 4px 14px rgba(83,74,183,0.28);
-}
-
 /* Cancel modal */
 .modal-overlay {
   position: fixed;
@@ -2075,7 +2053,7 @@ function copyLink() {
   .host-cta__btn { width: 100%; text-align: center; }
   .host-confirmed-actions { flex-direction: column; align-items: flex-start; }
   .host-confirmed-actions__btns { width: 100%; }
-  .cancel-confirm-btn, .edit-confirm-btn { flex: 1; text-align: center; }
+  .cancel-confirm-btn { flex: 1; text-align: center; }
   .save-bar { flex-direction: column-reverse; }
   .clear-btn, .save-btn { width: 100%; justify-content: center; }
   .tab-heading { flex-direction: column; gap: 8px; }
