@@ -23,6 +23,7 @@ const selectedDates = ref<Set<string>>(new Set())
 const copied = ref(false)
 const showCancelModal = ref(false)
 const showDeleteModal = ref(false)
+const cancelConfirmHover = ref(false)
 const toast = ref<string | null>(null)
 
 const { data: meeting, isLoading } = useMeeting(meetingId)
@@ -36,6 +37,8 @@ const { mutate: deleteMeeting, isPending: isDeleting } = useDeleteMeeting(meetin
 const isHost = computed(() => meeting.value?.hostId === authStore.user?.id)
 const isConfirmed = computed(() => !!meeting.value && meeting.value.status !== 'OPEN')
 const hasActiveRevote = computed(() => revoteData.value?.status === 'OPEN')
+const canCancelConfirm = computed(() => meeting.value?.status === 'CONFIRMED')
+const canEditConfirm = computed(() => meeting.value?.status === 'CONFIRMED' || meeting.value?.status === 'PLACE_VOTING')
 
 watch(meeting, (m) => {
   if (!m || !authStore.user) return
@@ -772,8 +775,14 @@ function copyLink() {
               </div>
             </div>
             <div class="host-confirmed-actions__btns">
-              <button class="cancel-confirm-btn" @click="showCancelModal = true">확정 취소</button>
-              <button class="edit-confirm-btn" @click="router.push(`/meetings/${meetingId}/edit`)">확정 수정</button>
+              <div class="cancel-confirm-wrap" @mouseenter="cancelConfirmHover = true" @mouseleave="cancelConfirmHover = false">
+                <button class="cancel-confirm-btn" :disabled="!canCancelConfirm" @click="canCancelConfirm && (showCancelModal = true)">확정 취소</button>
+                <div v-if="!canCancelConfirm && cancelConfirmHover" class="cancel-confirm-tooltip">
+                  장소 제안이 진행 중이어서 확정 취소를 할 수 없어요
+                  <span class="cancel-confirm-tooltip__arrow" />
+                </div>
+              </div>
+              <button class="edit-confirm-btn" :disabled="!canEditConfirm" @click="canEditConfirm && router.push(`/meetings/${meetingId}/edit`)">확정 수정</button>
             </div>
           </div>
         </template>
@@ -1858,9 +1867,44 @@ function copyLink() {
   letter-spacing: -0.01em;
   transition: all 0.12s;
 }
-.cancel-confirm-btn:hover {
+.cancel-confirm-btn:hover:not(:disabled) {
   background: rgba(200,54,43,0.06);
   border-color: #C8362B;
+}
+.cancel-confirm-btn:disabled,
+.edit-confirm-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.cancel-confirm-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.cancel-confirm-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 7px 11px;
+  background: rgba(20, 20, 30, 0.92);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 500;
+  border-radius: 7px;
+  white-space: nowrap;
+  letter-spacing: -0.005em;
+  z-index: 200;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+.cancel-confirm-tooltip__arrow {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  background: rgba(20, 20, 30, 0.92);
 }
 .edit-confirm-btn {
   padding: 11px 18px;
@@ -1876,7 +1920,7 @@ function copyLink() {
   transition: background 0.12s, box-shadow 0.12s;
   box-shadow: 0 1px 2px rgba(83,74,183,0.18);
 }
-.edit-confirm-btn:hover {
+.edit-confirm-btn:hover:not(:disabled) {
   background: var(--color-primary-dark);
   box-shadow: 0 4px 14px rgba(83,74,183,0.28);
 }
