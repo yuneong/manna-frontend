@@ -206,6 +206,7 @@ export function useSuggestPlace(meetingId: number) {
       meetingApi.suggestPlace(meetingId, data).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['meetings', meetingId, 'places'] })
+      queryClient.invalidateQueries({ queryKey: ['meetings', meetingId] })
     },
   })
 }
