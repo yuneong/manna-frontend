@@ -10,6 +10,7 @@ import AvatarStack from '../components/common/AvatarStack.vue'
 import KebabMenu from '../components/common/KebabMenu.vue'
 import PlaceTab from '../components/meeting/PlaceTab.vue'
 import PhaseTabs from '../components/meeting/PhaseTabs.vue'
+import SettlementTab from './meeting/tabs/SettlementTab.vue'
 import { avatarColorForId } from '../utils/avatar'
 
 const route = useRoute()
@@ -564,9 +565,14 @@ function copyLink() {
           />
         </template>
 
-        <!-- Settle tab (placeholder) -->
+        <!-- Settle tab -->
         <template v-else-if="l1 === 'settle'">
-          <div class="settle-placeholder">정산 기능은 준비 중이에요</div>
+          <SettlementTab
+            :meeting-id="meetingId"
+            :participants="meeting.participants"
+            :current-user-id="authStore.user?.id ?? 0"
+            @toast="showToastMsg"
+          />
         </template>
 
         <!-- Heatmap subtab -->

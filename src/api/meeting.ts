@@ -15,6 +15,11 @@ import type {
   PlaceSuggestRequest,
   Place,
 } from '../types/meeting'
+import type {
+  Settlement,
+  SettlementsResponse,
+  CreateSettlementRequest,
+} from '../types/settlement'
 
 export const meetingApi = {
   create: (data: CreateMeetingRequest) => client.post<Meeting>('/v1/meetings', data),
@@ -44,4 +49,12 @@ export const meetingApi = {
     client.post<Place>(`/v1/meetings/${id}/places`, data),
   votePlace: (id: number, placeId: number) =>
     client.post(`/v1/meetings/${id}/places/${placeId}/vote`),
+  getSettlements: (id: number) =>
+    client.get<SettlementsResponse>(`/v1/meetings/${id}/settlements`),
+  createSettlement: (id: number, data: CreateSettlementRequest) =>
+    client.post<Settlement>(`/v1/meetings/${id}/settlements`, data),
+  paySettlement: (id: number, settlementId: number) =>
+    client.patch(`/v1/meetings/${id}/settlements/${settlementId}/pay`),
+  completeSettlement: (id: number, settlementId: number) =>
+    client.patch(`/v1/meetings/${id}/settlements/${settlementId}/complete`),
 }
