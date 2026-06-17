@@ -57,4 +57,5 @@ export const meetingApi = {
     client.patch(`/v1/meetings/${id}/settlements/${settlementId}/pay`),
   completeSettlement: (id: number, settlementId: number) =>
     client.patch(`/v1/meetings/${id}/settlements/${settlementId}/complete`),
+  closeMeeting: (id: number) => client.patch(`/v1/meetings/${id}/done`),
 }

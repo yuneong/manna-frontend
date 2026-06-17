@@ -211,6 +211,17 @@ export function useSuggestPlace(meetingId: number) {
   })
 }
 
+export function useCloseMeeting(meetingId: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => meetingApi.closeMeeting(meetingId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['meetings', meetingId] })
+      queryClient.invalidateQueries({ queryKey: ['meetings', 'my'] })
+    },
+  })
+}
+
 export function useVotePlace(meetingId: number) {
   const queryClient = useQueryClient()
   return useMutation({

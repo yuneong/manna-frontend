@@ -571,6 +571,8 @@ function copyLink() {
             :meeting-id="meetingId"
             :participants="meeting.participants"
             :current-user-id="authStore.user?.id ?? 0"
+            :host-id="meeting.hostId"
+            :meeting-status="meeting.status"
             @toast="showToastMsg"
           />
         </template>

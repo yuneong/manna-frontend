@@ -6,15 +6,18 @@ import {
   usePaySettlement,
   useCompleteSettlement,
 } from '../../../composables/useSettlement'
+import { useCloseMeeting } from '../../../composables/useMeeting'
 import SettlementCard from '../../../components/settlement/SettlementCard.vue'
 import SettlementCreateForm from './SettlementCreateForm.vue'
-import type { Participant } from '../../../types/meeting'
+import type { Participant, MeetingStatus } from '../../../types/meeting'
 import type { CreateSettlementRequest } from '../../../types/settlement'
 
 const props = defineProps<{
   meetingId: number
   participants: Participant[]
   currentUserId: number
+  hostId: number
+  meetingStatus: MeetingStatus
 }>()
 
 const emit = defineEmits<{
@@ -27,9 +30,17 @@ const { data: settlementsData, isLoading } = useSettlements(props.meetingId)
 const { mutate: createSettlement, isPending: isCreating } = useCreateSettlement(props.meetingId)
 const { mutate: paySettlement } = usePaySettlement(props.meetingId)
 const { mutate: completeSettlement } = useCompleteSettlement(props.meetingId)
+const { mutate: closeMeeting, isPending: isClosing } = useCloseMeeting(props.meetingId)
 
 const settlements = computed(() => settlementsData.value?.settlements ?? [])
 const isEmpty = computed(() => !isLoading.value && settlements.value.length === 0)
+const isHost = computed(() => props.currentUserId === props.hostId)
+const allCompleted = computed(
+  () => settlements.value.length > 0 && settlements.value.every((s) => s.status === 'COMPLETED'),
+)
+const showCloseBtn = computed(() => isHost.value && props.meetingStatus === 'SETTLING')
+const canAddSettlement = computed(() => props.meetingStatus !== 'DONE')
+const closeTooltipVisible = ref(false)
 
 function onSubmit(data: CreateSettlementRequest) {
   createSettlement(data, {
@@ -68,6 +79,17 @@ function onComplete(settlementId: number) {
 function onCancel() {
   showForm.value = false
 }
+
+function onClose() {
+  closeMeeting(undefined, {
+    onSuccess: () => emit('toast', '약속이 종료됐어요'),
+    onError: (e: any) => {
+      const status = e?.response?.status
+      if (status === 403) emit('toast', '권한이 없어요')
+      else emit('toast', '약속 종료에 실패했어요')
+    },
+  })
+}
 </script>
 
 <template>
@@ -100,7 +122,7 @@ function onCancel() {
           모임에서 쓴 비용을 정산해보세요.<br />참여자 누구나 정산을 추가할 수 있어요.
         </p>
       </div>
-      <button class="st__add-btn st__add-btn--solid" @click="showForm = true">
+      <button v-if="canAddSettlement" class="st__add-btn st__add-btn--solid" @click="showForm = true">
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
           <path d="M7.5 3v9M3 7.5h9" stroke="#fff" stroke-width="1.7" stroke-linecap="round" />
         </svg>
@@ -120,12 +142,33 @@ function onCancel() {
           @complete="onComplete"
         />
       </div>
-      <button class="st__add-btn st__add-btn--dashed" :disabled="isCreating" @click="showForm = true">
+      <button
+        v-if="canAddSettlement"
+        class="st__add-btn st__add-btn--dashed"
+        :disabled="isCreating"
+        @click="showForm = true"
+      >
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
           <path d="M7.5 3v9M3 7.5h9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
         </svg>
         정산 추가하기
       </button>
+
+      <!-- 약속 종료하기 (방장 + SETTLING 상태일 때만) -->
+      <div v-if="showCloseBtn" class="st__close-wrap" @mouseenter="closeTooltipVisible = true" @mouseleave="closeTooltipVisible = false">
+        <button
+          class="st__close-btn"
+          :disabled="!allCompleted || isClosing"
+          @click="onClose"
+        >
+          <span v-if="isClosing" class="st__spinner" />
+          {{ isClosing ? '종료 중...' : '약속 종료하기' }}
+        </button>
+        <div v-if="!allCompleted && closeTooltipVisible" class="st__close-tooltip">
+          완료되지 않은 정산이 있어요
+          <span class="st__close-tooltip__arrow" />
+        </div>
+      </div>
     </template>
   </div>
 </template>
@@ -216,4 +259,72 @@ function onCancel() {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* Close button */
+.st__close-wrap {
+  position: relative;
+  margin-top: 8px;
+}
+.st__close-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  font-size: 14.5px;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: -0.01em;
+  background: #16a34a;
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.22);
+  transition: background 0.12s, box-shadow 0.12s;
+}
+.st__close-btn:hover:not(:disabled) {
+  background: #15803d;
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.30);
+}
+.st__close-btn:disabled {
+  background: #E5E5EA;
+  color: #9A9AA3;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.st__close-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30, 30, 35, 0.88);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 10px;
+  border-radius: 7px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+}
+.st__close-tooltip__arrow {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: rgba(30, 30, 35, 0.88);
+}
+.st__spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 </style>

@@ -8,7 +8,8 @@ const labelMap: Record<MeetingStatus, string> = {
   CONFIRMED: '장소 제안 필요',
   PLACE_VOTING: '장소 제안 중',
   SETTLING: '정산 중',
-  CANCELLED: '취소',
+  DONE: '완료',
+  CANCELLED: '취소됨',
 }
 
 const classMap: Record<MeetingStatus, string> = {
@@ -16,6 +17,7 @@ const classMap: Record<MeetingStatus, string> = {
   CONFIRMED: 'confirmed',
   PLACE_VOTING: 'place-voting',
   SETTLING: 'settling',
+  DONE: 'done',
   CANCELLED: 'cancelled',
 }
 </script>
@@ -62,10 +64,16 @@ const classMap: Record<MeetingStatus, string> = {
 .badge--place-voting .badge__dot { background-color: #3B70C9; }
 
 .badge--settling {
-  background-color: rgba(15, 110, 86, 0.1);
-  color: #0F6E56;
+  background-color: rgba(8, 145, 178, 0.1);
+  color: #0891B2;
 }
-.badge--settling .badge__dot { background-color: #0F6E56; }
+.badge--settling .badge__dot { background-color: #0891B2; }
+
+.badge--done {
+  background-color: rgba(22, 163, 74, 0.12);
+  color: #16a34a;
+}
+.badge--done .badge__dot { background-color: #16a34a; }
 
 .badge--cancelled {
   background-color: rgba(0, 0, 0, 0.06);
