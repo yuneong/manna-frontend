@@ -122,7 +122,7 @@ const accountHolder = ref('')
 // --- Validation ---
 const isValid = computed(() => {
   if (!title.value.trim() || !bankName.value.trim() || !accountNumber.value.trim() || !accountHolder.value.trim()) return false
-  if (method.value === 'TOTAL') return totalRaw.value > 0 && selectedIds.value.size > 0
+  if (method.value === 'TOTAL') return totalRaw.value > 0 && (others.value.length === 0 || selectedIds.value.size > 0)
   return items.value.some((it) => it.name.trim() && it.raw > 0 && it.participantIds.size > 0)
 })
 
@@ -248,7 +248,7 @@ function initial(nickname: string) {
         </div>
       </div>
 
-      <div class="scf__field">
+      <div v-if="others.length > 0" class="scf__field">
         <label class="scf__label">함께 낼 사람 <span class="scf__required">*</span></label>
         <p class="scf__hint">나를 포함해 정산 인원이 계산돼요</p>
         <div class="scf__participant-chips">
@@ -270,9 +270,10 @@ function initial(nickname: string) {
           </button>
         </div>
       </div>
+      <p v-else class="scf__hint scf__hint--solo">나 혼자 결제한 내역이에요</p>
 
       <!-- 1인당 미리보기 -->
-      <div v-if="totalRaw > 0 && selectedIds.size > 0" class="scf__preview">
+      <div v-if="totalRaw > 0 && (selectedIds.size > 0 || others.length === 0)" class="scf__preview">
         <div class="scf__preview-sub">{{ wonFormat(totalRaw) }}원 ÷ {{ headcount }}명</div>
         <div class="scf__preview-highlight">1인당 {{ wonFormat(perPersonTotal) }}원</div>
       </div>
@@ -489,6 +490,12 @@ function initial(nickname: string) {
   font-size: 12px;
   color: var(--color-text-secondary);
   line-height: 1.4;
+}
+.scf__hint--solo {
+  margin: 0;
+  padding: 10px 13px;
+  background: var(--color-bg-secondary);
+  border-radius: 9px;
 }
 
 /* Input */
