@@ -17,6 +17,7 @@ export function useCreateSettlement(meetingId: number) {
       meetingApi.createSettlement(meetingId, data).then((r) => r.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settlements', meetingId] })
+      queryClient.invalidateQueries({ queryKey: ['meetings', meetingId] })
     },
   })
 }
