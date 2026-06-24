@@ -39,6 +39,15 @@ const isHost = computed(() => meeting.value?.hostId === authStore.user?.id)
 const isConfirmed = computed(() => !!meeting.value && meeting.value.status !== 'OPEN')
 const hasActiveRevote = computed(() => revoteData.value?.status === 'OPEN')
 const canCancelConfirm = computed(() => meeting.value?.status === 'CONFIRMED')
+const isHeatReadonly = computed(() =>
+  ['PLACE_VOTING', 'SETTLING', 'DONE'].includes(meeting.value?.status ?? ''),
+)
+const cancelConfirmTooltip = computed(() => {
+  const s = meeting.value?.status
+  if (s === 'SETTLING') return '정산이 진행 중이어서 확정 취소를 할 수 없어요'
+  if (s === 'DONE') return '약속이 완료되어 확정 취소를 할 수 없어요'
+  return '장소 제안이 진행 중이어서 확정 취소를 할 수 없어요'
+})
 
 watch(meeting, (m) => {
   if (!m || !authStore.user) return
@@ -561,6 +570,8 @@ function copyLink() {
           <PlaceTab
             :meeting-id="meetingId"
             :total-participants="totalParticipants"
+            :readonly="meeting.status === 'SETTLING' || meeting.status === 'DONE'"
+            :readonly-message="meeting.status === 'DONE' ? '약속이 완료되어 장소 제안이 마감됐어요.' : '정산이 시작되어 장소 제안이 마감됐어요.'"
             @toast="showToastMsg"
           />
         </template>
@@ -586,6 +597,9 @@ function copyLink() {
               </div>
               <div v-if="isConfirmed && confirmedDate" class="tab-heading__sub">
                 <b style="color: var(--color-success)">{{ confirmedDate.getMonth()+1 }}월 {{ confirmedDate.getDate() }}일 ({{ DAYS[confirmedDate.getDay()] }})</b>에 확정되었어요
+              </div>
+              <div v-else-if="isHeatReadonly" class="tab-heading__sub">
+                날짜 확정이 완료되어 결과만 확인할 수 있어요.
               </div>
               <div v-else class="tab-heading__sub">진한 색일수록 더 많은 사람이 가능한 날짜예요</div>
             </div>
@@ -785,7 +799,7 @@ function copyLink() {
               <div class="cancel-confirm-wrap" @mouseenter="cancelConfirmHover = true" @mouseleave="cancelConfirmHover = false">
                 <button class="cancel-confirm-btn" :disabled="!canCancelConfirm" @click="canCancelConfirm && (showCancelModal = true)">확정 취소</button>
                 <div v-if="!canCancelConfirm && cancelConfirmHover" class="cancel-confirm-tooltip">
-                  장소 제안이 진행 중이어서 확정 취소를 할 수 없어요
+                  {{ cancelConfirmTooltip }}
                   <span class="cancel-confirm-tooltip__arrow" />
                 </div>
               </div>

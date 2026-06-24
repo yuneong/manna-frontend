@@ -16,11 +16,24 @@ const emit = defineEmits<{
 }>()
 
 const perms = computed(() => {
-  const isConfirmedOrLater = props.status !== 'OPEN'
+  const s = props.status
   return {
-    mine:   { enabled: !isConfirmedOrLater, hint: '일정이 확정되어 수정할 수 없어요' },
-    place:  { enabled: isConfirmedOrLater,  hint: '일정 확정 후 이용할 수 있어요' },
-    settle: { enabled: isConfirmedOrLater,  hint: '일정 확정 후 이용할 수 있어요' },
+    mine: {
+      enabled: s === 'OPEN',
+      hint: '일정이 확정되어 수정할 수 없어요',
+    },
+    place: {
+      enabled:  s !== 'OPEN',
+      readonly: s === 'SETTLING' || s === 'DONE',
+      hint: '일정 확정 후 이용할 수 있어요',
+    },
+    settle: {
+      enabled: s !== 'OPEN',
+      hint: '일정 확정 후 이용할 수 있어요',
+    },
+    heat: {
+      readonly: s === 'PLACE_VOTING' || s === 'SETTLING' || s === 'DONE',
+    },
   }
 })
 

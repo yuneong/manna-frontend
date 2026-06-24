@@ -39,7 +39,11 @@ const allCompleted = computed(
   () => settlements.value.length > 0 && settlements.value.every((s) => s.status === 'COMPLETED'),
 )
 const showCloseBtn = computed(() => isHost.value && props.meetingStatus === 'SETTLING')
-const canAddSettlement = computed(() => props.meetingStatus !== 'DONE')
+const canAddSettlement = computed(() =>
+  props.meetingStatus === 'CONFIRMED' ||
+  props.meetingStatus === 'PLACE_VOTING' ||
+  props.meetingStatus === 'SETTLING'
+)
 const closeTooltipVisible = ref(false)
 
 function onSubmit(data: CreateSettlementRequest) {

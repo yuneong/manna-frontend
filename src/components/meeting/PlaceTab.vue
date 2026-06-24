@@ -9,6 +9,8 @@ import type { Place } from '../../types/meeting'
 const props = defineProps<{
   meetingId: number
   totalParticipants: number
+  readonly?: boolean
+  readonlyMessage?: string
 }>()
 
 const emit = defineEmits<{
@@ -106,11 +108,15 @@ function onVote(placeId: number) {
     <template v-else-if="!sortedPlaces.length">
       <PlaceEmptyState />
       <PlaceSuggestForm
+        v-if="!readonly"
         ref="formRef"
         :is-pending="isSuggesting"
         :always-open="true"
         @submit="onSuggest"
       />
+      <div v-else class="place-tab__readonly-notice">
+        {{ readonlyMessage ?? '정산이 시작되어 장소 제안이 마감됐어요.' }}
+      </div>
     </template>
 
     <!-- Has places -->
@@ -123,16 +129,19 @@ function onVote(placeId: number) {
           :is-leader="isLeader(place)"
           :is-co-leader="isCoLeader(place)"
           :total-participants="totalParticipants"
-
           :is-voting="votingIds.has(place.id)"
           @vote="onVote(place.id)"
         />
       </div>
       <PlaceSuggestForm
+        v-if="!readonly"
         ref="formRef"
         :is-pending="isSuggesting"
         @submit="onSuggest"
       />
+      <div v-else class="place-tab__readonly-notice">
+        {{ readonlyMessage ?? '정산이 시작되어 장소 제안이 마감됐어요.' }}
+      </div>
     </template>
   </div>
 </template>
@@ -183,5 +192,14 @@ function onVote(placeId: number) {
   flex-direction: column;
   gap: 10px;
   margin-bottom: 16px;
+}
+.place-tab__readonly-notice {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: var(--color-bg-secondary, #f8f8fb);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  text-align: center;
 }
 </style>
