@@ -5,6 +5,7 @@ import type { SettlementParticipant } from '../../types/settlement'
 const props = defineProps<{
   participant: SettlementParticipant
   isMe: boolean
+  isCreator: boolean
   isCompleted: boolean
 }>()
 
@@ -22,12 +23,12 @@ function wonFormat(n: number) {
 </script>
 
 <template>
-  <div class="p-row" :class="{ 'p-row--me': isMe && !participant.isPaid }">
+  <div class="p-row" :class="{ 'p-row--me': isMe && !isCreator && !participant.isPaid }">
     <div
       class="p-row__avatar"
       :style="{
-        background: participant.isPaid ? avatarColorForId(participant.userId) : '#EFEFF3',
-        color: participant.isPaid ? '#fff' : '#9A9AA3',
+        background: isCreator || participant.isPaid ? avatarColorForId(participant.userId) : '#EFEFF3',
+        color: isCreator || participant.isPaid ? '#fff' : '#9A9AA3',
       }"
     >
       {{ initial(participant.nickname) }}
@@ -39,7 +40,10 @@ function wonFormat(n: number) {
       <span class="p-row__amount">{{ wonFormat(participant.amount) }}원</span>
     </div>
 
-    <div v-if="participant.isPaid" class="p-row__status p-row__status--done">
+    <div v-if="isCreator" class="p-row__status p-row__status--creator">
+      받는 사람
+    </div>
+    <div v-else-if="participant.isPaid" class="p-row__status p-row__status--done">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
         <circle cx="7" cy="7" r="6.5" fill="rgba(15,110,86,0.12)" />
         <path d="M4 7l2 2 4-4.5" stroke="#0F6E56" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
@@ -47,7 +51,7 @@ function wonFormat(n: number) {
       완료
     </div>
     <button
-      v-else-if="isMe && !isCompleted"
+      v-else-if="isMe && !isCreator && !isCompleted"
       class="p-row__pay-btn"
       @click="emit('pay')"
     >
@@ -111,6 +115,11 @@ function wonFormat(n: number) {
   font-size: 12px;
   font-weight: 700;
   flex-shrink: 0;
+}
+.p-row__status--creator {
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 12px;
 }
 .p-row__status--done { color: #0F6E56; }
 .p-row__status--unpaid { color: #E24B4A; }

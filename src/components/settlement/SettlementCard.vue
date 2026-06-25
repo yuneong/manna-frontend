@@ -23,15 +23,18 @@ const totalAmount = computed(() => {
   return props.settlement.participants.reduce((sum, p) => sum + p.amount, 0)
 })
 
+const payers = computed(() =>
+  props.settlement.participants.filter((p) => p.userId !== props.settlement.creator.userId),
+)
+
 const perAmount = computed(() =>
-  props.settlement.type === 'TOTAL' && props.settlement.participants.length > 0
-    ? props.settlement.participants[0]!.amount
+  props.settlement.type === 'TOTAL' && payers.value.length > 0
+    ? payers.value[0]!.amount
     : null,
 )
 
-
-const allPaid = computed(() => props.settlement.participants.every((p) => p.isPaid))
-const paidCount = computed(() => props.settlement.participants.filter((p) => p.isPaid).length)
+const allPaid = computed(() => payers.value.every((p) => p.isPaid))
+const paidCount = computed(() => payers.value.filter((p) => p.isPaid).length)
 
 function wonFormat(n: number) {
   return n.toLocaleString('ko-KR')
@@ -95,6 +98,19 @@ function copyAccount() {
       </button>
     </div>
 
+    <!-- Items (ITEMIZED only) -->
+    <div v-if="settlement.type === 'ITEMIZED' && settlement.items?.length" class="s-card__items">
+      <div class="s-card__items-label">항목 내역</div>
+      <div
+        v-for="(item, idx) in settlement.items"
+        :key="idx"
+        class="s-card__item-row"
+      >
+        <span class="s-card__item-name">{{ item.name }}</span>
+        <span class="s-card__item-amount">{{ wonFormat(item.amount) }}원</span>
+      </div>
+    </div>
+
     <!-- Participants -->
     <div class="s-card__participants">
       <ParticipantRow
@@ -102,6 +118,7 @@ function copyAccount() {
         :key="p.userId"
         :participant="p"
         :is-me="p.userId === currentUserId"
+        :is-creator="p.userId === settlement.creator.userId"
         :is-completed="isDone"
         @pay="emit('pay', settlement.settlementId)"
       />
@@ -122,7 +139,7 @@ function copyAccount() {
           정산 완료 처리
         </template>
         <template v-else>
-          정산 완료 처리 ({{ paidCount }}/{{ settlement.participants.length }}명 납부)
+          정산 완료 처리 ({{ paidCount }}/{{ payers.length }}명 납부)
         </template>
       </button>
     </div>
@@ -273,6 +290,35 @@ function copyAccount() {
 }
 .s-card__copy-btn:not(.s-card__copy-btn--copied):hover {
   background: #4540a0;
+}
+
+/* Items */
+.s-card__items {
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.s-card__items-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 2px;
+}
+.s-card__item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.s-card__item-name {
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+.s-card__item-amount {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
 }
 
 /* Participants */

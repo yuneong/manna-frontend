@@ -44,9 +44,13 @@ const others = computed(() => props.participants.filter((p) => p.id !== props.cu
 
 // Headcount includes creator
 const headcount = computed(() => selectedIds.value.size + 1)
-const perPersonTotal = computed(() =>
-  headcount.value > 0 ? Math.ceil(totalRaw.value / headcount.value) : 0,
+const perPersonBase = computed(() =>
+  headcount.value > 0 ? Math.floor(totalRaw.value / headcount.value) : 0,
 )
+const totalRemainder = computed(() =>
+  headcount.value > 0 ? totalRaw.value % headcount.value : 0,
+)
+const creatorAmount = computed(() => perPersonBase.value + totalRemainder.value)
 
 // --- Step 2-B: 항목별 ---
 interface ItemForm {
@@ -93,14 +97,21 @@ function toggleItemParticipant(itemId: string, participantId: number) {
   items.value[idx]!.participantIds = next
 }
 
-// Per-participant totals for ITEMIZED preview
+// Per-participant totals for ITEMIZED preview (백엔드 동일 규칙: floor + 나머지는 creator 흡수)
 const perPersonItemized = computed<Record<number, number>>(() => {
   const totals: Record<number, number> = {}
   for (const item of items.value) {
     if (item.raw > 0 && item.participantIds.size > 0) {
-      const each = Math.ceil(item.raw / item.participantIds.size)
-      for (const id of item.participantIds) {
-        totals[id] = (totals[id] ?? 0) + each
+      const ids = [...item.participantIds]
+      const base = Math.floor(item.raw / ids.length)
+      const r = item.raw % ids.length
+      const creatorIn = item.participantIds.has(props.currentUserId)
+      const sorted = [...ids].sort((a, b) => a - b)
+      for (const id of ids) {
+        const extra = creatorIn
+          ? (id === props.currentUserId ? r : 0)
+          : (sorted.indexOf(id) < r ? 1 : 0)
+        totals[id] = (totals[id] ?? 0) + base + extra
       }
     }
   }
@@ -203,7 +214,7 @@ function initial(nickname: string) {
             @click="method = 'TOTAL'"
           >
             <div class="scf__method-opt-top">
-              <span class="scf__method-opt-label">총액 N빵</span>
+              <span class="scf__method-opt-label">총액 1/N 정산</span>
               <span class="scf__method-radio" :class="{ 'scf__method-radio--active': method === 'TOTAL' }">
                 <span v-if="method === 'TOTAL'" class="scf__method-radio-dot" />
               </span>
@@ -231,7 +242,7 @@ function initial(nickname: string) {
     <div v-if="method === 'TOTAL'" class="scf__section">
       <div class="scf__section-head">
         <span class="scf__step-badge">2</span>
-        <span class="scf__section-title">총액 N빵</span>
+        <span class="scf__section-title">총액 1/N 정산</span>
       </div>
 
       <div class="scf__field">
@@ -275,7 +286,10 @@ function initial(nickname: string) {
       <!-- 1인당 미리보기 -->
       <div v-if="totalRaw > 0 && (selectedIds.size > 0 || others.length === 0)" class="scf__preview">
         <div class="scf__preview-sub">{{ wonFormat(totalRaw) }}원 ÷ {{ headcount }}명</div>
-        <div class="scf__preview-highlight">1인당 {{ wonFormat(perPersonTotal) }}원</div>
+        <div class="scf__preview-highlight">1인당 {{ wonFormat(perPersonBase) }}원</div>
+        <div v-if="totalRemainder > 0" class="scf__preview-creator-note">
+          정산자(나) {{ wonFormat(creatorAmount) }}원
+        </div>
       </div>
     </div>
 
@@ -661,6 +675,12 @@ function initial(nickname: string) {
   font-weight: 800;
   color: var(--color-primary);
   letter-spacing: -0.03em;
+}
+.scf__preview-creator-note {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
 }
 .scf__preview--table {
   text-align: left;
