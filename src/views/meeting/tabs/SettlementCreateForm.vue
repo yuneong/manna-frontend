@@ -399,7 +399,6 @@ function initial(nickname: string) {
           v-model="accountNumber"
           class="scf__input"
           placeholder="1000-1234-5678"
-          inputmode="numeric"
         />
       </div>
     </div>
