@@ -579,9 +579,10 @@ function copyLink() {
         <!-- Settle tab -->
         <template v-else-if="l1 === 'settle'">
           <SettlementTab
+            v-if="authStore.user"
             :meeting-id="meetingId"
             :participants="meeting.participants"
-            :current-user-id="authStore.user?.id ?? 0"
+            :current-user-id="authStore.user.id"
             :host-id="meeting.hostId"
             :meeting-status="meeting.status"
             @toast="showToastMsg"

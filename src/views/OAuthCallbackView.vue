@@ -1,17 +1,20 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useQueryClient } from '@tanstack/vue-query'
 import { useAuthStore } from '../stores/auth'
 import { useAuth } from '../composables/useAuth'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const queryClient = useQueryClient()
 const { fetchMe } = useAuth()
 
 onMounted(async () => {
   const params = new URLSearchParams(window.location.search)
   const token = params.get('token')
   if (token) {
+    queryClient.clear()
     authStore.setToken(token)
     await fetchMe()
     const redirect = sessionStorage.getItem('redirectAfterLogin') || '/'
